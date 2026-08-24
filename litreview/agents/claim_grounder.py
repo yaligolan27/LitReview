@@ -158,6 +158,36 @@ def _locate_and_soften(sec: SurveySection, claim_text: str, rewrite: str) -> boo
     return False
 
 
+_EXAMPLE_BLOCK = re.compile(r"\[EXAMPLE\](.*?)\[/EXAMPLE\]", re.DOTALL)
+_NUMERIC = re.compile(r"(?<![\w\[])\d+(?:[.,]\d+)?")
+_ILLUSTRATION = ("להמחשה", "להדגמה", "אילוסטרטיב", "לצורך הדגמה",
+                 "היפותט", "illustrat", "hypothetic", "for illustration")
+
+
+def _example_claims(sec: SurveySection, chapter_label: str) -> list[Claim]:
+    """Part-E wave 3 guardrail: every numeric value in an [EXAMPLE] block must
+    carry a citation ([n]/[W#]) OR the block must be marked as an illustration
+    ("להמחשה"). A value with neither becomes an *unsupported* claim, so the
+    reviewer/fix-loop forces a source or an explicit illustration label — the
+    marker can never smuggle an unsourced number into the document."""
+    claims: list[Claim] = []
+    for idx, match in enumerate(_EXAMPLE_BLOCK.finditer(sec.content), start=1):
+        block = match.group(1)
+        title = block.split("|", 1)[0].strip()[:60] or "דוגמה"
+        low = block.lower()
+        is_illustration = any(t in low for t in _ILLUSTRATION)
+        has_cite = bool(_CITE.search(block) or _WCITE.search(block))
+        has_number = bool(_NUMERIC.search(block))
+        if has_number and not has_cite and not is_illustration:
+            claims.append(Claim(
+                id=f"{chapter_label}:ex{idx}",
+                text=f"ערכי הדוגמה המחושבת \"{title}\" ללא מקור או סימון \"להמחשה\"",
+                citations=[], status="unsupported",
+                reason="ערך מספרי בדוגמה מחושבת חייב ציטוט [n] או סימון \"להמחשה\" מפורש",
+                chapter=chapter_label))
+    return claims
+
+
 def _mark_cross_corroborated(sec: SurveySection, claims: list[Claim]) -> None:
     """Part-E §21.2 signal 9 — deterministic, no network: a supported claim
     cited by 2+ sources whose author groups are disjoint gets a
@@ -200,6 +230,9 @@ def run_claim_grounder(ctx: RunContext, state: SurveyState,
                              level="warn")
             _apply_verdicts(sec, claims, verdicts)
             _mark_cross_corroborated(sec, claims)
+        # Deterministic [EXAMPLE] value-source check (no LLM); appended after
+        # the judged claims so it is never confused with the verdict indexing.
+        claims = claims + _example_claims(sec, str(chapter_no))
         sec.claims = claims
         sec.stale_grounding = False
 

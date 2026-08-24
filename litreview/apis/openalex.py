@@ -185,3 +185,29 @@ def search(query: str, limit: int = 5,
     except _http.NotFoundError:
         return []
     return [_normalize(w) for w in (data.get("results") or [])]
+
+
+def make_source_provider(source_id: str, name: str):
+    """Part-E wave 3: virtual routing — search OpenAlex scoped to one source id
+    (``primary_location.source.id``). Lets the Source Scout reach a specific
+    repository through OpenAlex without a dedicated connector."""
+
+    def search(query: str, limit: int = 5,
+               year_from: int | None = None, year_to: int | None = None) -> list[Paper]:
+        filters = [f"primary_location.source.id:{source_id}"]
+        if year_from:
+            filters.append(f"from_publication_date:{year_from}-01-01")
+        if year_to:
+            filters.append(f"to_publication_date:{year_to}-12-31")
+        params = {"search": query, "per-page": max(1, min(50, limit)),
+                  "filter": ",".join(filters), "mailto": get_settings().contact_email}
+        try:
+            data = _http.get_json(BASE, params=params)
+        except _http.NotFoundError:
+            return []
+        papers = [_normalize(w) for w in (data.get("results") or [])]
+        for p in papers:
+            p.source = name
+        return papers
+
+    return search

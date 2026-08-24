@@ -107,11 +107,34 @@ def _web_findings_block(state: SurveyState) -> str:
     return "\n".join(lines) + "\n"
 
 
+def is_practical(settings, entry: TocEntry) -> bool:
+    """Practical mode is global (SURVEY_DEPTH=practical) or per-chapter
+    (TocEntry.depth) — Part-E wave 3."""
+    return (getattr(settings, "depth", "standard") == "practical"
+            or getattr(entry, "depth", "standard") == "practical")
+
+
+_PRACTICAL_BLOCK = """
+===== מצב פרקטי (worked examples) — חובה =====
+שלב בפרק לפחות דוגמה מחושבת אחת מלאה בתחביר:
+[EXAMPLE]כותרת|נתונים והנחות|חישוב שלב-אחר-שלב|תוצאה[/EXAMPLE] (4 שדות מופרדים ב-|)
+- הצג שרשרת גזירה: מהנוסחה → הצבת ערכים → תוצאה מספרית.
+- כל ערך מספרי בדוגמה חייב אחד משניים: (א) ציטוט [n] למקור שממנו הערך נלקח, או
+  (ב) המילה "להמחשה" במפורש כשהערך היפותטי בלבד. ערך ללא אחד מאלה ייפסל בביקורת.
+- הוסף טבלת פרמטרים ([TABLE]) ותנאי תקפות — מתי הדוגמה תקפה ומתי לא.
+"""
+
+
 def build_chapter_prompt(state: SurveyState, entry: TocEntry,
-                         chapter_no: int, papers: list[Paper]) -> str:
+                         chapter_no: int, papers: list[Paper],
+                         practical: bool = False) -> str:
     sections_list = "\n".join(
         f"  {chapter_no}.{j} {name}" for j, name in enumerate(entry.sections, start=1)
     ) or f"  {chapter_no}.1 סקירה"
+    practical_block = _PRACTICAL_BLOCK if practical else ""
+    example_element = (
+        "\n- [EXAMPLE]כותרת|הנחות|חישוב|תוצאה[/EXAMPLE] — דוגמה מחושבת "
+        "(4 שדות; כל ערך עם [n] או \"להמחשה\")" if practical else "")
     return f"""כתוב את פרק {chapter_no} בסקירת ספרות אקדמית בעברית בנושא: {state.brief.topic}
 קהל היעד: {state.brief.audience or 'קוראים מקצועיים'}
 
@@ -141,15 +164,16 @@ def build_chapter_prompt(state: SurveyState, entry: TocEntry,
 - [TABLE]טבלת markdown עם | [/TABLE] — אפשר לסמן תא מנצח [BEST] או חלש [BAD]
 - [CASE]שם המקרה|תגיות|תיאור[/CASE] — מקרה בוחן (3 שדות מופרדים ב-|)
 - [KPI]ערך|תיאור|מקור [n]|הקשר[/KPI] — מדד כמותי (4 שדות, חובה ציטוט)
-- **הדגשה** לטקסט חשוב
-"""
+- **הדגשה** לטקסט חשוב{example_element}
+{practical_block}"""
 
 
 def run_writer(ctx: RunContext, state: SurveyState) -> SurveyState:
     state.sections = []
     for i, entry in enumerate(state.toc, start=1):
         papers = find_relevant_papers(entry, state.papers)
-        prompt = build_chapter_prompt(state, entry, i, papers)
+        practical = is_practical(ctx.settings, entry)
+        prompt = build_chapter_prompt(state, entry, i, papers, practical=practical)
         content = ctx.llm.complete(prompt, purpose=f"writer:ch{i}", system=_SYSTEM)
         section = SurveySection(
             title=entry.chapter,
@@ -169,7 +193,8 @@ def revise_section(ctx: RunContext, state: SurveyState, sec: SurveySection,
                    feedback: str, chapter_no: int) -> None:
     entry = next((t for t in state.toc if t.chapter == sec.title),
                  TocEntry(chapter=sec.title))
-    prompt = build_chapter_prompt(state, entry, chapter_no, sec.papers)
+    prompt = build_chapter_prompt(state, entry, chapter_no, sec.papers,
+                                  practical=is_practical(ctx.settings, entry))
     prompt += f"""
 
 ===== הטיוטה הקודמת =====

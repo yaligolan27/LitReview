@@ -141,6 +141,10 @@ class Settings:
     signals_cap: int = 40                # max cited papers to enrich (cost bound)
     dr_depth: str = "standard"           # standard | deep (primary-source chase, per-SQ saturation)
 
+    # --- Part-E wave 3 (spec §23, §24) — default OFF / standard ---
+    source_scout: bool = False           # discover authoritative DBs on a real coverage gap
+    depth: str = "standard"              # standard | practical ([EXAMPLE] worked examples)
+
     # --- optional subsystems ---
     semantic_retrieval: bool = False
     semantic_download: bool = False
@@ -203,6 +207,8 @@ class Settings:
             reliability_signals=_bool("SURVEY_RELIABILITY_SIGNALS", False),
             signals_cap=_int("SURVEY_SIGNALS_CAP", 40, lo=0),
             dr_depth=_str("SURVEY_DR_DEPTH", "standard").lower(),
+            source_scout=_bool("SURVEY_SOURCE_SCOUT", False),
+            depth=_str("SURVEY_DEPTH", "standard").lower(),
             semantic_retrieval=_bool("ENABLE_SEMANTIC_RETRIEVAL", False),
             semantic_download=_bool("ENABLE_SEMANTIC_DOWNLOAD", False),
             semantic_model=_str("SEMANTIC_MODEL", "all-MiniLM-L6-v2"),

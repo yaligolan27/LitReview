@@ -18,6 +18,7 @@ _CALLOUT = re.compile(r"\[CALLOUT(?::([a-zA-Z]+))?\](.*?)\[/CALLOUT\]", re.DOTAL
 _FORMULA = re.compile(r"\[FORMULA\](.*?)\[/FORMULA\]|\$\$(.*?)\$\$|\\\[(.*?)\\\]",
                       re.DOTALL)
 _CASE = re.compile(r"\[CASE\](.*?)\[/CASE\]", re.DOTALL)
+_EXAMPLE = re.compile(r"\[EXAMPLE\](.*?)\[/EXAMPLE\]", re.DOTALL)
 _TABLE = re.compile(r"\[TABLE\](.*?)\[/TABLE\]", re.DOTALL)
 _WCITE = re.compile(r"\[(W\d+(?:\s*,\s*W\d+)*)\]")
 _CITE = re.compile(r"\[(\d+(?:\s*[-–,]\s*\d+)*)\]")
@@ -57,6 +58,22 @@ def _case_card(match: re.Match) -> str:
                         for t in tags.split(",") if t.strip())
     return (f'<div class="case-card"><div class="case-head">📋 מקרה בוחן: {name} '
             f'{tags_html}</div><div>{content}</div></div>')
+
+
+def _example_card(match: re.Match) -> str:
+    """Part-E wave 3 worked example: title|assumptions|calculation|result.
+    Citations inside the fields are converted by the later citation passes."""
+    parts = [p.strip() for p in match.group(1).split("|")]
+    title = parts[0] if parts else "דוגמה"
+    labels = ("נתונים/הנחות", "חישוב שלב-אחר-שלב", "תוצאה")
+    rows = []
+    for label, value in zip(labels, parts[1:4]):
+        if value:
+            strong = ' class="ex-result"' if label == "תוצאה" else ""
+            rows.append(f'<div class="ex-row"><span class="ex-lbl">{label}:</span> '
+                        f'<span{strong}>{value}</span></div>')
+    return (f'<div class="example-card"><div class="ex-head">🧮 דוגמה מחושבת: {title}'
+            f'</div>{"".join(rows)}</div>')
 
 
 def _md_table(match: re.Match) -> str:
@@ -103,6 +120,8 @@ def convert_markers(text: str, drop_kpi: bool = True) -> str:
     text = _FORMULA.sub(_stash, text)
     # 5. Case cards
     text = _CASE.sub(_case_card, text)
+    # 5b. Worked-example cards (Part-E practical mode)
+    text = _EXAMPLE.sub(_example_card, text)
     # 6. Tables
     text = _TABLE.sub(_md_table, text)
     # 7. Web citations → anchored, visually distinct

@@ -91,6 +91,19 @@
     סבבים, 40 ממצאים, verify 12), עדשות חיפוש מתחלפות (by-entity/time/doctype/
     language), רוויה per-SQ, ורדיפת מקור ראשוני (`dr_trace`) לממצאי W-T2/T3 —
     כפופה לאותו שער URL אמיתי; דירוג עולה בלבד; "מסמך מקור לא נמצא" כשאין.
+- **גל 3** (§23, ברירת מחדל כבויים):
+  - `SURVEY_SOURCE_SCOUT` — Source Scout (שלב 3.3): נפעל **רק על פער כיסוי
+    אמיתי** (תחום לא-ודאי + מעט מקורות אחרי ≥4 שאילתות / סבב העמקה חלש); כל
+    טריגר נרשם ל-audit. מציע ≤5 מאגרים; מודלק אוטומטית רק אם המאגר בקטלוג
+    (connector קיים) או ב-`data/approved_sources.json` (allowlist), אחרת מוצג
+    לאישור מפעיל. `apis/oai_pmh.py` = מחבר OAI-PMH גנרי (Dublin Core) שפותח
+    מאות ריפוזיטוריות; `registry.register_provider` **חוסם T1** — מאגר סרוק
+    מקבל T2 לכל היותר.
+  - `SURVEY_DEPTH=practical` (גלובלי או per-chapter ב-`TocEntry.depth`) — סמן
+    `[EXAMPLE]` (כותרת|הנחות|חישוב|תוצאה) שזור בכל הצנרת (markers/convert/
+    marker_render/writer). Guardrail ב-grounder: כל ערך מספרי ב-[EXAMPLE] חייב
+    ציטוט [n] או סימון "להמחשה" מפורש — אחרת נוצרת טענה **unsupported** והביקורת
+    מחזירה לכתיבה. fulltext cap 6→12 במצב פרקטי.
 
 ## מפת מודולים
 

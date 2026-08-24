@@ -105,13 +105,18 @@ def run_fulltext(ctx: RunContext, state: SurveyState) -> dict:
         state.log("fulltext", "full-text retrieval disabled")
         return result
 
+    # Practical mode leans on worked examples → deeper full-text (cap 6→12).
+    cap = settings.fulltext_max_papers
+    if getattr(settings, "depth", "standard") == "practical":
+        cap = max(12, cap)
+
     # Priority: open-access papers with a DOI first (spec §9.5).
     candidates = sorted(
         [p for p in state.papers if not p.is_retracted],
         key=lambda p: (p.is_open_access and bool(p.doi), bool(p.doi),
                        p.citation_count),
         reverse=True,
-    )[:settings.fulltext_max_papers]
+    )[:cap]
     terms = _topic_terms(state)
 
     for paper in candidates:

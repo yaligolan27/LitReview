@@ -170,6 +170,12 @@ def complete(prompt: str, purpose: str, system: str = "") -> str:
         if "ממצאי deep-research" in prompt:
             web_line = ("\n\nבהקשר התעשייתי, גורמים בשוק מדווחים על "
                         "התרחבות הפעילות בתחום [W1].")
+        # Practical mode: emit one worked example with a cited value so the
+        # [EXAMPLE] rendering + grounder guardrail path is exercised E2E.
+        if "מצב פרקטי" in prompt:
+            web_line += (
+                "\n\n[EXAMPLE]חישוב לדוגמה|נתון בסיס מהספרות [1]|"
+                "הצבה בנוסחה והכפלה שלב-אחר-שלב|התוצאה המתקבלת [1][/EXAMPLE]")
         return _WRITER_TEMPLATE.format(n=_chapter_number(purpose), web_line=web_line)
 
     if purpose == "grounder":

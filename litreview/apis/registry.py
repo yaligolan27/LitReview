@@ -277,3 +277,12 @@ def get_search(name: str) -> Callable:
 
 def tier_for(source: str) -> str:
     return SOURCE_TIER.get(source, "T2")
+
+
+def register_provider(name: str, search_fn: Callable, tier: str = "T2") -> str:
+    """Register a provider discovered at runtime by the Source Scout
+    (Part-E wave 3). The tier is CLAMPED to T2/T3 — a scouted source is never
+    promoted to T1, whatever the caller passes (spec §23)."""
+    PROVIDERS[name] = search_fn
+    SOURCE_TIER[name] = tier if tier in ("T2", "T3") else "T2"
+    return name

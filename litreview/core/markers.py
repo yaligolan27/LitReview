@@ -66,6 +66,13 @@ def lint(text: str) -> list[LintIssue]:
         if match.group(1).count("|") < 3:
             issues.append(LintIssue("warning", "KPI block needs 4 |-separated fields"))
 
+    # Part-E wave 3: [EXAMPLE] = title|assumptions|calculation|result (4 fields).
+    for match in re.finditer(r"\[EXAMPLE\](.*?)\[/EXAMPLE\]", text, re.DOTALL):
+        if match.group(1).count("|") < 3:
+            issues.append(LintIssue(
+                "warning", "EXAMPLE block needs 4 |-separated fields "
+                           "(title|assumptions|calculation|result)"))
+
     return issues
 
 

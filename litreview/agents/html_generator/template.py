@@ -92,6 +92,13 @@ details summary{cursor:pointer;font-weight:700;color:var(--navy-700)}
 .case-card>div:last-child{padding:12px 16px;font-size:14.5px}
 .case-card .tag{background:#e8f0fe;color:var(--navy-700);border-radius:8px;
   padding:1px 8px;font-size:11.5px;margin-inline-start:6px;font-weight:600}
+.example-card{border:1px solid var(--line);border-inline-start:4px solid #2f855a;
+  border-radius:12px;margin:18px 0;overflow:hidden;background:#f6fbf8}
+.example-card .ex-head{background:#e7f4ec;padding:10px 16px;font-weight:700;
+  color:#22543d;font-size:14px}
+.example-card .ex-row{padding:8px 16px;font-size:14px;border-top:1px solid #e2efe7}
+.example-card .ex-lbl{font-weight:700;color:#2f855a}
+.example-card .ex-result{font-weight:700}
 table.tbl{border-collapse:collapse;width:100%;margin:18px 0;font-size:14px}
 table.tbl th{background:var(--navy-900);color:#fff;padding:9px 12px;text-align:right;
   font-weight:600;font-size:13px}

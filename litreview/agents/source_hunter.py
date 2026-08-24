@@ -24,6 +24,7 @@ from ..core.context import RunContext
 from ..core.dedup import dedupe, similarity
 from ..core.llm import extract_json
 from ..core.state import Paper, SurveyState
+from . import source_scout
 
 _SATURATION_MIN_QUERY = 4
 _SATURATION_ROUNDS = 2
@@ -341,6 +342,20 @@ def run_source_hunter(ctx: RunContext, state: SurveyState) -> SurveyState:
         run_query_list(new_queries, saturating=False)
         refine_added += len(unique) - before
 
+    # Source Scout (stage 3.3, Part-E wave 3): only on a real coverage gap,
+    # and only databases from the catalog/allowlist are searched automatically.
+    scout_enabled, scout_report = source_scout.run_source_scout(
+        ctx, state, routing, unique, executed, refine_added)
+    if scout_enabled:
+        for query in queries[:_SATURATION_MIN_QUERY]:
+            found = _fan_out(ctx, scout_enabled, query.text,
+                             brief.year_from, brief.year_to)
+            for paper in found:
+                paper.found_via = "scout"
+            raw_all.extend(found)
+        unique, stats = dedupe(raw_all, threshold=ctx.settings.dedup_threshold)
+        sources = sources + [s for s in scout_enabled if s not in sources]
+
     snowballed = _snowball(ctx, unique)
     if snowballed:
         raw_all.extend(snowballed)
@@ -374,6 +389,8 @@ def run_source_hunter(ctx: RunContext, state: SurveyState) -> SurveyState:
         "languages_requested": list(brief.languages),
         "languages_searched": sorted(languages_searched) or ["English"],
     }
+    if scout_report:
+        state.source_routing["source_scout"] = scout_report
     state.log("hunt", "source hunt complete", unique=len(unique),
               queries=len(executed), sources=sources,
               refine_added=refine_added, snowball=len(snowballed))

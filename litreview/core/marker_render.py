@@ -81,6 +81,10 @@ def to_plain_text(content: str) -> str:
     text = re.sub(r"\[CASE\](.*?)\[/CASE\]",
                   lambda m: "מקרה בוחן: " + m.group(1).replace("|", " — "),
                   text, flags=re.DOTALL)
+    text = re.sub(r"\[EXAMPLE\](.*?)\[/EXAMPLE\]",
+                  lambda m: "דוגמה מחושבת: " + " — ".join(
+                      p.strip() for p in m.group(1).split("|") if p.strip()),
+                  text, flags=re.DOTALL)
     text = re.sub(r"\[KPI\](.*?)\[/KPI\]", "", text, flags=re.DOTALL)
     text = re.sub(r"\[TABLE\](.*?)\[/TABLE\]", "", text, flags=re.DOTALL)
     text = re.sub(r"\[TRL:(\d)\]", r"(TRL \1)", text)
@@ -106,8 +110,8 @@ def render_content_to_docx(doc, content: str) -> None:
         set_rtl(paragraph)
 
     segments = re.split(
-        r"(\[(?:FORMULA|TABLE|CALLOUT[^\]]*|CASE|KPI)\].*?"
-        r"\[/(?:FORMULA|TABLE|CALLOUT|CASE|KPI)\])",
+        r"(\[(?:FORMULA|TABLE|CALLOUT[^\]]*|CASE|KPI|EXAMPLE)\].*?"
+        r"\[/(?:FORMULA|TABLE|CALLOUT|CASE|KPI|EXAMPLE)\])",
         content, flags=re.DOTALL)
     for segment in segments:
         segment = segment.strip()
@@ -127,7 +131,7 @@ def render_content_to_docx(doc, content: str) -> None:
             run = p.add_run(to_plain_text(inner))
             run.bold = True
             rtl(p)
-        elif segment.startswith(("[CASE]", "[KPI]")):
+        elif segment.startswith(("[CASE]", "[KPI]", "[EXAMPLE]")):
             p = doc.add_paragraph(to_plain_text(segment))
             rtl(p)
         else:
