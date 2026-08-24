@@ -132,7 +132,10 @@ def test_network_failure_on_one_signal_is_unchecked(monkeypatch):
     # OpenAlex work fetch fails (NetworkError → status unchecked upstream);
     # Crossref works. Author/journal become unchecked, but the score still
     # computes from the signals that DID resolve — and is not penalised.
+    # The self-citation lookup is a separate network call — stub it to []
+    # ("references unavailable" → unchecked) so the test is fully hermetic.
     monkeypatch.setattr(openalex, "fetch_work_by_doi", lambda doi: {"status": "unchecked"})
+    monkeypatch.setattr(semantic_scholar, "references", lambda paper, limit=25: [])
     monkeypatch.setattr(crossref, "updates",
                         lambda doi: {"status": "ok", "has_errata": False,
                                      "has_concern": False, "update_kinds": [],
