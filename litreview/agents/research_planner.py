@@ -32,9 +32,13 @@ def brief_from_config(config: dict[str, Any]) -> ResearchBrief:
         author=str(config.get("author", "")),
         output_language=str(config.get("output_language", "he")).lower(),
         scope_preset=str(config.get("scope", config.get("scope_preset", "full"))),
-        scope_target_pages=config.get("target_pages"),
-        output_slides=bool(config.get("outputs", {}).get("slides", False)),
-        output_podcast=bool(config.get("outputs", {}).get("podcast", False)),
+        scope_target_pages=config.get("target_pages", config.get("scope_target_pages")),
+        # Both shapes accepted: nested CLI config {"outputs": {...}} and the
+        # web brief's flat ResearchBrief field names.
+        output_slides=bool(config.get("outputs", {}).get("slides",
+                           config.get("output_slides", False))),
+        output_podcast=bool(config.get("outputs", {}).get("podcast",
+                            config.get("output_podcast", False))),
     )
     if not brief.topic:
         raise ValueError("config missing 'topic'")

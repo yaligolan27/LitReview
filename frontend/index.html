@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מערכת סקרי ספרות AI</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- right rail (RTL primary nav) -->
+  <nav class="rail">
+    <div class="logo">ס</div>
+    <button class="nav-ico" data-nav="dashboard" data-tip="דשבורד">▦</button>
+    <button class="nav-ico" data-nav="brief" data-tip="הגדרת סקר">✎</button>
+    <button class="nav-ico" data-nav="toc" data-tip="תוכן עניינים">☰</button>
+    <button class="nav-ico" data-nav="sources" data-tip="מקורות">📚</button>
+    <button class="nav-ico" data-nav="pipeline" data-tip="ריצת המערכת">⚙</button>
+    <button class="nav-ico" data-nav="draft" data-tip="עריכת טיוטה">✐</button>
+    <button class="nav-ico" data-nav="export" data-tip="ייצוא">⤓</button>
+    <div class="spacer"></div>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb" id="crumb">דשבורד <small>— כל הסקרים</small></div>
+      <div class="grow"></div>
+      <div class="search" id="globalSearch">
+        <span>🔍</span><input id="globalSearchInput" placeholder="חיפוש סקרים, נושאים…">
+      </div>
+      <div class="operator">
+        <span class="av" id="opAv">?</span>
+        <span>מפעיל:</span>
+        <select id="opSelect"></select>
+      </div>
+    </header>
+
+    <div class="content">
+      <div id="flow"></div>
+      <main id="screen"></main>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toastIcon">✓</span><span id="toastMsg"></span></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

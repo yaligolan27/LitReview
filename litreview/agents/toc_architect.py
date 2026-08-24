@@ -60,6 +60,14 @@ def _is_latin(text: str) -> bool:
     return any("a" <= ch.lower() <= "z" for ch in text)
 
 
+def backfill_keywords(state: SurveyState) -> None:
+    """Every chapter gets English search keywords (the Hebrew-title fix)."""
+    for entry in state.toc:
+        if not entry.keywords_en:
+            entry.keywords_en = ([entry.chapter] if _is_latin(entry.chapter) else []) + \
+                _topic_keywords(state.brief)
+
+
 def run_toc_architect(ctx: RunContext, state: SurveyState) -> SurveyState:
     if state.toc:
         # A TOC supplied by config / the web UI wins over the default build.
@@ -69,8 +77,5 @@ def run_toc_architect(ctx: RunContext, state: SurveyState) -> SurveyState:
         state.log("toc", "default TOC built", chapters=len(state.toc))
     # Nispachim are filtered from the writing flow (spec §9.2).
     state.toc = [t for t in state.toc if t.chapter.strip() != "נספחים"]
-    for entry in state.toc:
-        if not entry.keywords_en:
-            entry.keywords_en = ([entry.chapter] if _is_latin(entry.chapter) else []) + \
-                _topic_keywords(state.brief)
+    backfill_keywords(state)
     return state
