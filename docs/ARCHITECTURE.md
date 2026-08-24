@@ -104,6 +104,16 @@
     marker_render/writer). Guardrail ב-grounder: כל ערך מספרי ב-[EXAMPLE] חייב
     ציטוט [n] או סימון "להמחשה" מפורש — אחרת נוצרת טענה **unsupported** והביקורת
     מחזירה לכתיבה. fulltext cap 6→12 במצב פרקטי.
+- **גל 4** (§24, ברירת מחדל כבויים):
+  - `SURVEY_ML_DB_ROUTING` — ניתוב מאגרים לפי שפה: לכל שפה מבוקשת (לא-אנגלית)
+    ערוץ OpenAlex `language:XX` (עובד היום, בלי connector חדש) + מאגרים ייעודיים
+    (SciELO/HAL/J-STAGE) כשהם רשומים (`registry.LANGUAGE_ISO`/`LANGUAGE_DB_ROUTING`).
+    שקיפות: פילוח נמצאו/צוטטו/התבקשו-וריקות לכל שפה, ותווית 🌐 למקור זר מצוטט.
+  - `SURVEY_ML_WEB` — סבבי deep-research per-language: `dr_plan.relevant_languages`
+    (או fallback ל-brief), סבב לכל שפה זרה. **כלל ברזל**: ציטוט מילולי (quote)
+    נשאר בשפת המקור ולעולם לא מתורגם; תובנה בעברית; תג שפה גלוי לממצא.
+  Guardrail-על: תרגום משמש לשאילתות בלבד — שום טקסט במסמך אינו מתורגם אוטומטית,
+  וכל מקור עדיין עובר dedup → audit → grounding.
 
 ## מפת מודולים
 

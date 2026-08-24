@@ -19,7 +19,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 
-from ..apis import crossref, opencitations, registry, semantic_scholar
+from ..apis import crossref, opencitations, openalex, registry, semantic_scholar
 from ..core.context import RunContext
 from ..core.dedup import dedupe, similarity
 from ..core.llm import extract_json
@@ -251,6 +251,59 @@ def _snowball(ctx: RunContext, unique: list[Paper]) -> list[Paper]:
     return found
 
 
+# --- multilingual database routing (Part-E wave 4) -------------------------
+
+
+def _multilang_db_search(ctx: RunContext, state: SurveyState
+                         ) -> tuple[list[Paper], dict]:
+    """For each requested non-English language, route to that language's
+    databases. The always-available executable channel is OpenAlex language
+    filtering (``language:XX`` — works today, no new connector); specialized
+    DBs (SciELO/HAL/J-STAGE…) are added only when registered as providers.
+
+    Guardrail: this widens the *search* only. Nothing is translated in the
+    document; every paper still flows through dedup → audit → grounding."""
+    settings = ctx.settings
+    if not settings.ml_db_routing or ctx.offline:
+        return [], {}
+    brief = state.brief
+    found_all: list[Paper] = []
+    per_lang: dict[str, dict] = {}
+    for lang in brief.languages:
+        iso = registry.iso_code(lang)
+        if not iso or iso == "en":
+            continue
+        got: list[Paper] = []
+        try:
+            got = openalex.search(brief.search_topic,
+                                  limit=settings.limit_per_source * 2,
+                                  year_from=brief.year_from, year_to=brief.year_to,
+                                  language=iso)
+        except Exception as exc:  # noqa: BLE001
+            ctx.log_line("hunt", f"multilang OpenAlex ({iso}) failed: {exc}",
+                         level="warn")
+        channels = [f"openalex:language:{iso}"]
+        for db in registry.language_channels(iso):
+            if db in registry.PROVIDERS:
+                try:
+                    extra = registry.get_search(db)(
+                        brief.search_topic, limit=settings.limit_per_source,
+                        year_from=brief.year_from, year_to=brief.year_to)
+                    got.extend(extra)
+                    channels.append(db)
+                except Exception:  # noqa: BLE001
+                    pass
+        for paper in got:
+            paper.found_via = "multilang_db"
+            if not paper.tier:
+                paper.tier = registry.tier_for(paper.source)
+        found_all.extend(got)
+        per_lang[iso] = {"language": lang, "iso": iso, "found": len(got),
+                         "channels": channels,
+                         "suggested_dbs": registry.language_channels(iso)}
+    return found_all, per_lang
+
+
 # --- user papers -----------------------------------------------------------
 
 
@@ -356,6 +409,13 @@ def run_source_hunter(ctx: RunContext, state: SurveyState) -> SurveyState:
         unique, stats = dedupe(raw_all, threshold=ctx.settings.dedup_threshold)
         sources = sources + [s for s in scout_enabled if s not in sources]
 
+    # Multilingual database routing (Part-E wave 4): widen the search to each
+    # requested language's databases before snowballing.
+    ml_papers, ml_breakdown = _multilang_db_search(ctx, state)
+    if ml_papers:
+        raw_all.extend(ml_papers)
+        unique, stats = dedupe(raw_all, threshold=ctx.settings.dedup_threshold)
+
     snowballed = _snowball(ctx, unique)
     if snowballed:
         raw_all.extend(snowballed)
@@ -391,6 +451,8 @@ def run_source_hunter(ctx: RunContext, state: SurveyState) -> SurveyState:
     }
     if scout_report:
         state.source_routing["source_scout"] = scout_report
+    if ml_breakdown:
+        state.source_routing["multilang_db"] = ml_breakdown
     state.log("hunt", "source hunt complete", unique=len(unique),
               queries=len(executed), sources=sources,
               refine_added=refine_added, snowball=len(snowballed))

@@ -136,6 +136,44 @@ DOMAIN_PROFILES: dict[str, DomainProfile] = {
 
 CERTAIN_SCORE = 2
 
+# --- Part-E wave 4: language routing (spec §24) ----------------------------
+# Language name (any casing / English or native) → ISO 639-1 code.
+LANGUAGE_ISO: dict[str, str] = {
+    "english": "en", "en": "en",
+    "hebrew": "he", "he": "he", "עברית": "he",
+    "spanish": "es", "es": "es", "español": "es",
+    "portuguese": "pt", "pt": "pt", "português": "pt",
+    "french": "fr", "fr": "fr", "français": "fr",
+    "german": "de", "de": "de", "deutsch": "de",
+    "italian": "it", "it": "it",
+    "japanese": "ja", "ja": "ja", "日本語": "ja",
+    "chinese": "zh", "zh": "zh", "中文": "zh",
+    "russian": "ru", "ru": "ru",
+    "arabic": "ar", "ar": "ar", "العربية": "ar",
+}
+
+# ISO code → specialized databases worth trying for that language, beyond the
+# universal OpenAlex ``language:`` channel. Names are for transparency and for
+# the Source Scout / allowlist to resolve (OAI-PMH or connector); the always-on
+# executable channel is OpenAlex language filtering.
+LANGUAGE_DB_ROUTING: dict[str, list[str]] = {
+    "es": ["scielo", "redalyc"],
+    "pt": ["scielo"],
+    "fr": ["hal"],
+    "ja": ["j-stage"],
+    "zh": ["cnki"],
+    "de": ["core"],
+}
+
+
+def iso_code(language: str) -> str:
+    return LANGUAGE_ISO.get((language or "").strip().lower(), "")
+
+
+def language_channels(iso: str) -> list[str]:
+    """Specialized DBs suggested for an ISO language (transparency/scout)."""
+    return LANGUAGE_DB_ROUTING.get(iso, [])
+
 
 def _tokens(text: str) -> list[str]:
     return re.findall(r"[\w\"׳״']+", text.lower(), flags=re.UNICODE)

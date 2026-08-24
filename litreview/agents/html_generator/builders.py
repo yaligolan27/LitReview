@@ -45,12 +45,12 @@ def build_cover(state: SurveyState) -> str:
         (len(state.sections), "פרקים"),
         (total_claims, "טענות שנבדקו"),
         (f"{supported_pct}%", "טענות נתמכות"),
-        (", ".join(_LANG_NAMES.get(l, l) for l in langs) or "—", "שפות המקורות"),
+        (", ".join(_LANG_NAMES.get(code, code) for code in langs) or "—", "שפות המקורות"),
         (year_range, "טווח שנים"),
     ]
     metric_html = "\n".join(
-        f'<div class="metric"><div class="n">{esc(n)}</div><div class="l">{esc(l)}</div></div>'
-        for n, l in metrics
+        f'<div class="metric"><div class="n">{esc(n)}</div><div class="l">{esc(label)}</div></div>'
+        for n, label in metrics
     )
     author = f" · {esc(state.brief.author)}" if state.brief.author else ""
     return f"""<div class="cover">
@@ -202,6 +202,9 @@ def build_web_sources(state: SurveyState) -> str:
                   f"ממצאים: {len(findings)} · אוששו: {stats.get('corroborated', 0)}")
     if stats.get("depth") == "deep":
         stats_line += f" · מצב עומק · מקורות ראשוניים: {stats.get('primary_traced', 0)}"
+    if stats.get("languages"):
+        langs = ", ".join(_LANG_NAMES.get(code, code) for code in stats["languages"])
+        stats_line += f" · שפות web: {langs}"
     items = []
     for f in cited:
         verdict = ""
@@ -210,6 +213,10 @@ def build_web_sources(state: SurveyState) -> str:
         elif f.get("verdict") == "disputed":
             verdict = ' <span class="vlabel warn">⚠ שנוי במחלוקת</span>'
         quote = f'<div class="quote">"{esc(f.get("quote", ""))}"</div>' if f.get("quote") else ""
+        lang_tag = ""
+        if f.get("lang"):
+            lang_tag = (f' <span class="vlabel na">🌐 '
+                        f'{esc(_LANG_NAMES.get(f["lang"], f["lang"]))}</span>')
         primary = ""
         if f.get("primary_url"):
             up = ' <span class="vlabel ok">↑ שודרג</span>' if f.get("tier_upgraded") else ""
@@ -222,7 +229,7 @@ def build_web_sources(state: SurveyState) -> str:
             f'{esc(f.get("heading", ""))} — <a href="{safe_href(f.get("url", ""))}">'
             f'{esc(f.get("source_name") or f.get("url", ""))}</a> '
             f'({esc(f.get("date", ""))}) <span class="vlabel na">{esc(f.get("tier", ""))}</span>'
-            f'{verdict}{quote}{primary}</li>')
+            f'{lang_tag}{verdict}{quote}{primary}</li>')
     extra = []
     contradictions = (state.deep_research or {}).get("contradictions") or []
     if contradictions:
@@ -274,6 +281,44 @@ def build_sections(state: SurveyState) -> str:
     return "\n".join(out)
 
 
+def build_language_transparency(state: SurveyState) -> str:
+    """Part-E wave 4: found / cited / requested-but-empty per language. Renders
+    only when multilingual routing actually ran (default output unchanged)."""
+    ml = (state.source_routing or {}).get("multilang_db")
+    if not ml:
+        return ""
+    from ...apis.registry import iso_code
+
+    def _by_lang(papers):
+        counts: dict[str, int] = {}
+        for p in papers:
+            code = (p.language or "en").split("-")[0].lower()
+            counts[code] = counts.get(code, 0) + 1
+        return counts
+
+    found_by = _by_lang(state.papers)
+    cited_by = _by_lang(state.cited_papers)
+    seen: set[str] = set()
+    rows = []
+    for lang in state.brief.languages:
+        code = iso_code(lang) or lang.split("-")[0].lower()
+        if code in seen:
+            continue
+        seen.add(code)
+        found, cited = found_by.get(code, 0), cited_by.get(code, 0)
+        note = ("התבקשה אך לא נמצאו מקורות" if found == 0
+                else "נמצאו אך לא צוטטו" if cited == 0 else "")
+        channels = ", ".join(ml.get(code, {}).get("channels", [])) or \
+            ("ערוץ ברירת מחדל" if code == "en" else "—")
+        rows.append(f"<tr><td>{esc(_LANG_NAMES.get(code, lang))}</td>"
+                    f"<td>{found}</td><td>{cited}</td><td>{esc(channels)}</td>"
+                    f"<td>{esc(note)}</td></tr>")
+    return f"""<h3>פילוח מקורות לפי שפה</h3>
+<p class="secs">חיפוש רב-לשוני: תרגום שימש לשאילתות בלבד; ציטוטים מילוליים לא תורגמו.</p>
+<table><tr><th>שפה</th><th>נמצאו</th><th>צוטטו</th><th>ערוצי חיפוש</th><th>הערה</th></tr>
+{''.join(rows)}</table>"""
+
+
 def build_transparency(state: SurveyState) -> str:
     g = state.grounding_report
     d = state.dedup_stats
@@ -316,6 +361,7 @@ def build_transparency(state: SurveyState) -> str:
 <table>{table}</table>
 <h3>תרשים PRISMA</h3>
 <div class="prisma-flow">{''.join(prisma_steps)}</div>
+{build_language_transparency(state)}
 <details><summary>יומן ביקורת מלא ({len(state.audit_log)} רשומות)</summary>
 <div class="audit">{audit_lines}</div></details>
 </div>"""
@@ -360,6 +406,17 @@ def _reliability_panel(paper: Paper) -> str:
             f'<table class="sig-tbl">{rows}</table></details>')
 
 
+def _foreign_lang_tag(state: SurveyState, paper: Paper) -> str:
+    """Part-E wave 4: a dedicated tag on a non-English cited source, shown only
+    when multilingual routing ran (so default output is unchanged)."""
+    if not (state.source_routing or {}).get("multilang_db"):
+        return ""
+    code = (paper.language or "").split("-")[0].lower()
+    if not code or code == "en":
+        return ""
+    return f' <span class="vlabel na">🌐 {esc(_LANG_NAMES.get(code, code))}</span>'
+
+
 def build_bibliography(state: SurveyState) -> str:
     items = []
     for paper in state.cited_papers:
@@ -372,7 +429,8 @@ def build_bibliography(state: SurveyState) -> str:
         if link:
             # href and text both escaped; scheme validated (no javascript: URIs).
             apa += f' <a href="{safe_href(link)}">{esc(link)}</a>'
-        items.append(f"<li>{apa} {_verification_label(paper)}{_reliability_panel(paper)}</li>")
+        items.append(f"<li>{apa} {_verification_label(paper)}{_foreign_lang_tag(state, paper)}"
+                     f"{_reliability_panel(paper)}</li>")
     return f"""<h2 class="chapter"><span>ביבליוגרפיה</span></h2>
 <p class="secs">רק מקורות שצוטטו בפועל בגוף הסקירה נכללים ברשימה ({len(items)} מקורות).</p>
 <ol class="bib">{''.join(items)}</ol>"""

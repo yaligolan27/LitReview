@@ -27,6 +27,7 @@ from __future__ import annotations
 import re
 from urllib.parse import urlparse
 
+from ..apis import registry
 from ..core.context import RunContext
 from ..core.dedup import similarity
 from ..core.llm import extract_json
@@ -433,6 +434,65 @@ def _entities(ctx: RunContext, state: SurveyState, plan: dict,
             "rows": rows}
 
 
+# --- Part-E wave 4: multilingual rounds ------------------------------------
+
+_ROUND_SYSTEM_ML = (
+    _ROUND_SYSTEM + " בצע את החיפוש בשפת היעד. כלל ברזל: ה-quote חייב להישאר "
+    "מילה-במילה בשפת המקור (אל תתרגם ציטוט!); שדה insight בעברית; ציין את שפת "
+    "המקור."
+)
+
+
+def _relevant_languages(plan: dict, state: SurveyState) -> list[str]:
+    raw = plan.get("relevant_languages") or [
+        lang for lang in state.brief.languages]
+    isos: list[str] = []
+    for lang in raw:
+        iso = registry.iso_code(str(lang))
+        if iso and iso != "en" and iso not in isos:
+            isos.append(iso)
+    return isos
+
+
+def _language_round(ctx: RunContext, state: SurveyState, plan: dict,
+                    findings: list[dict], seen_urls: set[str], iso: str) -> int:
+    prompt = (
+        f"נושא: {state.brief.topic} ({state.brief.search_topic})\n"
+        f"בצע סבב deep-research בשפה: {iso}. חפש מקורות מקומיים בשפה זו שאינם "
+        "מופיעים במקורות האנגליים. לכל ממצא: quote מילולי בשפת המקור, insight "
+        "בעברית.\n"
+        f"URLs שכבר נאספו (אל תחזור):\n"
+        + "\n".join(f"- {f['url']}" for f in findings[-30:]) + "\n\n"
+        'החזר JSON: {"findings": [{"id": "F#", "sq": "SQ#", "type": "market"|'
+        '"regulation"|"stat"|"program"|"product", "heading": "...", "insight": '
+        '"תובנה בעברית", "url": "https://...", "source_name": "...", "date": '
+        '"YYYY-MM", "quote": "ציטוט מילולי בשפת המקור"}]}'
+    )
+    try:
+        data = extract_json(ctx.llm.complete(
+            prompt, purpose=f"dr_round_ml_{iso}", system=_ROUND_SYSTEM_ML))
+        raw_findings = data.get("findings", []) if isinstance(data, dict) else []
+    except ValueError:
+        return 0
+    added = 0
+    for raw in raw_findings:
+        finding = clean_finding(raw)
+        if finding is None:
+            continue
+        normalized = _normalize_url(finding["url"])
+        if normalized in seen_urls:
+            continue
+        if any(similarity(finding["heading"].lower(), f["heading"].lower()) >= 88
+               for f in findings):
+            continue
+        seen_urls.add(normalized)
+        finding["id"] = finding["id"] or f"F{len(findings) + 1}"
+        finding["lang"] = iso        # visible source-language tag (never translated)
+        findings.append(finding)
+        added += 1
+    return added
+
+
 # --- main ------------------------------------------------------------------
 
 
@@ -509,6 +569,15 @@ def run_deep_research(ctx: RunContext, state: SurveyState) -> SurveyState:
             state.log("deep_research", f"per-SQ saturation at round {round_no}")
             break
 
+    # Part-E wave 4: per-language rounds (verbatim quotes stay in the source
+    # language; only the search widens). Standard runs skip this entirely.
+    ml_languages: list[str] = []
+    if settings.ml_web:
+        ml_languages = _relevant_languages(plan, state)
+        for iso in ml_languages:
+            added = _language_round(ctx, state, plan, findings, seen_urls, iso)
+            state.log("deep_research", f"multilingual round ({iso})", new_findings=added)
+
     corroborated = _verify(ctx, findings, cap=verify_cap)
     overlaps = _cross_check_academic(state, findings)
     traced = _trace_primary(ctx, findings, verify_cap) if deep else 0
@@ -535,6 +604,9 @@ def run_deep_research(ctx: RunContext, state: SurveyState) -> SurveyState:
     if deep:
         stats["depth"] = "deep"
         stats["primary_traced"] = traced
+    if ml_languages:
+        stats["languages"] = ml_languages
+        stats["multilingual_findings"] = sum(1 for f in findings if f.get("lang"))
     state.deep_research = {
         "plan": plan,
         "rounds": rounds_meta,

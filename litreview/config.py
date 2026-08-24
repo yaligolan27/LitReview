@@ -145,6 +145,10 @@ class Settings:
     source_scout: bool = False           # discover authoritative DBs on a real coverage gap
     depth: str = "standard"              # standard | practical ([EXAMPLE] worked examples)
 
+    # --- Part-E wave 4 (spec §24) — full multilingual, default OFF ---
+    ml_db_routing: bool = False          # per-language database routing (OpenAlex language: + maps)
+    ml_web: bool = False                 # per-language deep-research rounds
+
     # --- optional subsystems ---
     semantic_retrieval: bool = False
     semantic_download: bool = False
@@ -209,6 +213,8 @@ class Settings:
             dr_depth=_str("SURVEY_DR_DEPTH", "standard").lower(),
             source_scout=_bool("SURVEY_SOURCE_SCOUT", False),
             depth=_str("SURVEY_DEPTH", "standard").lower(),
+            ml_db_routing=_bool("SURVEY_ML_DB_ROUTING", False),
+            ml_web=_bool("SURVEY_ML_WEB", False),
             semantic_retrieval=_bool("ENABLE_SEMANTIC_RETRIEVAL", False),
             semantic_download=_bool("ENABLE_SEMANTIC_DOWNLOAD", False),
             semantic_model=_str("SEMANTIC_MODEL", "all-MiniLM-L6-v2"),

@@ -103,6 +103,7 @@ def complete(prompt: str, purpose: str, system: str = "") -> str:
             "rationale": "לנושא יש היבטי שוק ורגולציה פעילים.",
             "catalog_potential": True,
             "entity_type": "vendors",
+            "relevant_languages": ["English", "Spanish"],
             "subquestions": [
                 {"q": "מי השחקנים המרכזיים בתחום?", "angle": "market",
                  "target_sources": ["vendor sites", "industry press"]},
