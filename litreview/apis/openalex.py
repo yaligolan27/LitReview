@@ -60,6 +60,33 @@ def _normalize(work: dict) -> Paper:
     )
 
 
+def find_doi_by_title(title: str, year: int | None = None,
+                      min_similarity: int = 88) -> str:
+    """DOI backfill fallback after Crossref (spec §9.4b)."""
+    from ..core.dedup import normalize_title, similarity
+
+    if not title.strip():
+        return ""
+    try:
+        data = _http.get_json(BASE, params={
+            "filter": f"title.search:{title[:200]}",
+            "per-page": 3,
+            "mailto": get_settings().contact_email})
+    except (_http.NotFoundError, _http.NetworkError):
+        return ""
+    wanted = normalize_title(title)
+    for work in (data or {}).get("results") or []:
+        candidate = _normalize(work)
+        if not candidate.doi:
+            continue
+        if similarity(wanted, normalize_title(candidate.title)) < min_similarity:
+            continue
+        if year and candidate.year and abs(candidate.year - year) > 1:
+            continue
+        return candidate.doi
+    return ""
+
+
 def search(query: str, limit: int = 5,
            year_from: int | None = None, year_to: int | None = None,
            language: str | None = None) -> list[Paper]:

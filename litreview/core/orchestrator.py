@@ -33,6 +33,7 @@ from ..agents.html_generator import run_html_generator
 from .checkpoints import Checkpointer, RunRecord
 from .citation_manager import run_citation_manager
 from .context import RunContext
+from .fulltext import run_fulltext
 from .llm import extract_json
 from .stage_tracker import (
     StageFailed,
@@ -216,7 +217,7 @@ def build_stages(config: dict[str, Any]) -> dict[str, StageSpec]:
         StageSpec("audit", "Reliability Auditor",
                   reliability_auditor.run_reliability_auditor,
                   critical=True, validate=val_papers_after_audit),
-        StageSpec("fulltext", "Full-Text Retrieval", _stub("fulltext", "M2"), critical=False),
+        StageSpec("fulltext", "Full-Text Retrieval", run_fulltext, critical=False),
         StageSpec("deep_research", "Deep Research", _stub("deep_research", "M5"),
                   critical=False),
         StageSpec("write", "Writer", writer.run_writer, critical=True,

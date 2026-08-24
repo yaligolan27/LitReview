@@ -87,6 +87,33 @@ def verify_doi(doi: str) -> dict:
     return {"checked": True, "valid": True}
 
 
+def find_doi_by_title(title: str, year: int | None = None,
+                      min_similarity: int = 88) -> str:
+    """Reverse lookup (DOI backfill, spec §9.4b): bibliographic search, best
+    match by fuzzy title similarity (≥88) and year within ±1."""
+    from ..core.dedup import normalize_title, similarity
+
+    if not title.strip():
+        return ""
+    try:
+        data = _http.get_json(BASE, params={
+            "query.bibliographic": title, "rows": 3,
+            "mailto": get_settings().contact_email})
+    except (_http.NotFoundError, _http.NetworkError):
+        return ""
+    wanted = normalize_title(title)
+    for item in ((data or {}).get("message") or {}).get("items") or []:
+        candidate = _normalize(item)
+        if not candidate.doi:
+            continue
+        if similarity(wanted, normalize_title(candidate.title)) < min_similarity:
+            continue
+        if year and candidate.year and abs(candidate.year - year) > 1:
+            continue
+        return candidate.doi
+    return ""
+
+
 def fetch_by_doi(doi: str) -> Paper | None:
     try:
         data = _http.get_json(f"{BASE}/{doi}")

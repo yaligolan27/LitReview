@@ -97,14 +97,8 @@ def _cache_write(path: Path, entry: dict[str, Any]) -> None:
         pass  # cache is best-effort
 
 
-def get_json(url: str, params: dict[str, Any] | None = None,
-             headers: dict[str, str] | None = None,
-             timeout: float | None = None) -> Any:
-    """GET with retries + cache. Returns parsed JSON.
-
-    Raises ``NotFoundError`` on 404 (a definitive answer, and cached) and
-    ``NetworkError`` on transport failures / retry exhaustion.
-    """
+def _get(url: str, params: dict[str, Any] | None, headers: dict[str, str] | None,
+         timeout: float | None, as_text: bool) -> Any:
     settings = get_settings()
     cache_file = _cache_path(url, params)
     cached = _cache_read(cache_file)
@@ -138,13 +132,55 @@ def get_json(url: str, params: dict[str, Any] | None = None,
             elif resp.status_code >= 400:
                 raise NetworkError(f"HTTP {resp.status_code} from {url}")
             else:
-                try:
-                    body = resp.json()
-                except ValueError as exc:
-                    raise NetworkError(f"non-JSON response from {url}: {exc}") from exc
+                if as_text:
+                    body: Any = resp.text
+                else:
+                    try:
+                        body = resp.json()
+                    except ValueError as exc:
+                        raise NetworkError(f"non-JSON response from {url}: {exc}") from exc
                 _cache_write(cache_file, {"status": resp.status_code, "body": body})
                 return body
         if attempt < attempts - 1:
             time.sleep(_BACKOFFS[min(attempt, len(_BACKOFFS) - 1)])
 
     raise NetworkError(f"GET {url} failed after {attempts} attempts: {last_error}")
+
+
+def get_json(url: str, params: dict[str, Any] | None = None,
+             headers: dict[str, str] | None = None,
+             timeout: float | None = None) -> Any:
+    """GET with retries + cache. Returns parsed JSON.
+
+    Raises ``NotFoundError`` on 404 (a definitive answer, and cached) and
+    ``NetworkError`` on transport failures / retry exhaustion.
+    """
+    return _get(url, params, headers, timeout, as_text=False)
+
+
+def get_text(url: str, params: dict[str, Any] | None = None,
+             headers: dict[str, str] | None = None,
+             timeout: float | None = None) -> str:
+    """Same contract as get_json for text bodies (XML feeds, JATS)."""
+    return _get(url, params, headers, timeout, as_text=True)
+
+
+def get_bytes(url: str, timeout: float | None = None, max_bytes: int = 20_000_000) -> bytes:
+    """Uncached binary download (PDFs). Raises NetworkError on failure."""
+    try:
+        resp = session().get(url, timeout=timeout or get_settings().http_timeout,
+                             stream=True)
+        if resp.status_code == 404:
+            raise NotFoundError(url)
+        if resp.status_code >= 400:
+            raise NetworkError(f"HTTP {resp.status_code} from {url}")
+        chunks: list[bytes] = []
+        total = 0
+        for chunk in resp.iter_content(chunk_size=65536):
+            total += len(chunk)
+            if total > max_bytes:
+                raise NetworkError(f"download exceeds {max_bytes} bytes: {url}")
+            chunks.append(chunk)
+        return b"".join(chunks)
+    except requests.RequestException as exc:
+        raise NetworkError(f"GET {url} failed: {exc}") from exc

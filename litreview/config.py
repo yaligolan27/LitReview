@@ -57,13 +57,18 @@ def _csv(name: str) -> tuple[str, ...]:
 
 
 def _refine_rounds() -> int:
-    # New counter flag wins; legacy boolean flag maps truthy→1 / falsy→0.
+    # New counter flag wins. The legacy flag is honored by what users MEANT:
+    # a numeric value is a round count (the original treated 2 as falsy and
+    # silently disabled the round — spec §16), otherwise truthy→1 / falsy→0.
     if os.environ.get("SURVEY_REFINE_ROUNDS") is not None:
         return _int("SURVEY_REFINE_ROUNDS", 1, lo=0, hi=5)
     legacy = os.environ.get("SURVEY_REFINE_ROUND")
     if legacy is None:
         return 1
-    return 1 if legacy.strip().lower() in _TRUTHY else 0
+    legacy = legacy.strip().lower()
+    if legacy.isdigit():
+        return max(0, min(5, int(legacy)))
+    return 1 if legacy in _TRUTHY else 0
 
 
 @dataclass(frozen=True)
