@@ -46,13 +46,19 @@ def latex_to_unicode(latex: str) -> str:
                   r"\1", text)
 
     def _sup(match: re.Match) -> str:
-        content = match.group(1) or match.group(2)
+        # group(1) is the braced form ('' for empty braces), group(2) the \w
+        # form; `group(1) or group(2)` collapsed ''->None and crashed on None.
+        content = match.group(1) if match.group(1) is not None else (match.group(2) or "")
+        if not content:
+            return ""
         translated = content.translate(_SUPERSCRIPTS)
         return translated if translated != content or content.isdigit() \
             else f"^({content})"
 
     def _sub(match: re.Match) -> str:
-        content = match.group(1) or match.group(2)
+        content = match.group(1) if match.group(1) is not None else (match.group(2) or "")
+        if not content:
+            return ""
         translated = content.translate(_SUBSCRIPTS)
         return translated if all(ch in "0123456789+-=()" for ch in content) \
             else f"_({content})"

@@ -13,6 +13,7 @@ the job runner, so no DB-grade locking is needed.
 
 from __future__ import annotations
 
+import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,8 +39,17 @@ class SurveyStore:
         self.root = Path(root)
         self.surveys_dir = self.root / "surveys"
         self.surveys_dir.mkdir(parents=True, exist_ok=True)
+        self._locks: dict[str, threading.RLock] = {}
+        self._locks_guard = threading.Lock()
 
     # --- manifests ---------------------------------------------------------
+
+    def manifest_lock(self, sid: str) -> "threading.RLock":
+        """Per-survey lock guarding manifest read-modify-write so a job thread
+        and an HTTP handler cannot lose each other's updates. Reentrant so a
+        locked method (e.g. new_version) may call another (save_brief)."""
+        with self._locks_guard:
+            return self._locks.setdefault(sid, threading.RLock())
 
     def _manifest_path(self, sid: str) -> Path:
         return self.surveys_dir / sid / "manifest.json"
@@ -80,11 +90,16 @@ class SurveyStore:
         return manifest
 
     def archive(self, sid: str) -> None:
-        manifest = self.get(sid)
-        manifest["archived"] = True
-        self.save_manifest(manifest)
+        with self.manifest_lock(sid):
+            manifest = self.get(sid)
+            manifest["archived"] = True
+            self.save_manifest(manifest)
 
     def new_version(self, sid: str, carry: list[str] | None = None) -> dict[str, Any]:
+        with self.manifest_lock(sid):
+            return self._new_version_locked(sid, carry)
+
+    def _new_version_locked(self, sid: str, carry: list[str] | None) -> dict[str, Any]:
         manifest = self.get(sid)
         old_v = manifest["current_version"]
         new_v = max(entry["v"] for entry in manifest["versions"]) + 1
@@ -115,12 +130,13 @@ class SurveyStore:
     # --- status ------------------------------------------------------------
 
     def set_status(self, sid: str, status: str) -> None:
-        manifest = self.get(sid)
-        current = manifest["current_version"]
-        for entry in manifest["versions"]:
-            if entry["v"] == current:
-                entry["status"] = status
-        self.save_manifest(manifest)
+        with self.manifest_lock(sid):
+            manifest = self.get(sid)
+            current = manifest["current_version"]
+            for entry in manifest["versions"]:
+                if entry["v"] == current:
+                    entry["status"] = status
+            self.save_manifest(manifest)
 
     def status(self, sid: str) -> str:
         manifest = self.get(sid)
@@ -145,10 +161,11 @@ class SurveyStore:
 
     def save_brief(self, sid: str, brief: dict[str, Any], v: int | None = None) -> None:
         atomic_write_json(self.vdir(sid, v) / "brief.json", brief)
-        manifest = self.get(sid)
         if brief.get("topic"):
-            manifest["topic"] = brief["topic"]
-            self.save_manifest(manifest)
+            with self.manifest_lock(sid):
+                manifest = self.get(sid)
+                manifest["topic"] = brief["topic"]
+                self.save_manifest(manifest)
 
     def load_state(self, sid: str, v: int | None = None) -> SurveyState | None:
         return self.checkpointer(sid, v).load_state()

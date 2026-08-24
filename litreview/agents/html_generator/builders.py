@@ -14,7 +14,16 @@ _LANG_NAMES = {"en": "אנגלית", "he": "עברית", "de": "גרמנית", "
 
 
 def esc(text: str) -> str:
-    return html.escape(str(text or ""), quote=False)
+    # quote=True so values placed inside double-quoted HTML attributes cannot
+    # break out of the attribute (XSS). Harmless in text content.
+    return html.escape(str(text or ""), quote=True)
+
+
+def safe_href(url: str) -> str:
+    """Escaped href for a URL from a model/provider/DOI, or '#' for a
+    non-http(s) scheme (blocks javascript:/data: URIs)."""
+    u = str(url or "").strip()
+    return esc(u) if u[:7].lower() == "http://" or u[:8].lower() == "https://" else "#"
 
 
 def count_cited_languages(cited: list[Paper]) -> list[str]:
@@ -321,12 +330,14 @@ def build_bibliography(state: SurveyState) -> str:
     items = []
     for paper in state.cited_papers:
         apa = esc(paper.apa)
+        link = ""
         if paper.doi:
-            link = f"https://doi.org/{paper.doi}" if not paper.doi.startswith("http") else paper.doi
-            apa = apa.replace(esc(link), f'<a href="{link}">{esc(link)}</a>') \
-                if esc(link) in apa else apa + f' <a href="{link}">{esc(link)}</a>'
+            link = paper.doi if paper.doi.startswith("http") else f"https://doi.org/{paper.doi}"
         elif paper.url:
-            apa += f' <a href="{esc(paper.url)}">{esc(paper.url)}</a>'
+            link = paper.url
+        if link:
+            # href and text both escaped; scheme validated (no javascript: URIs).
+            apa += f' <a href="{safe_href(link)}">{esc(link)}</a>'
         items.append(f"<li>{apa} {_verification_label(paper)}</li>")
     return f"""<h2 class="chapter"><span>ביבליוגרפיה</span></h2>
 <p class="secs">רק מקורות שצוטטו בפועל בגוף הסקירה נכללים ברשימה ({len(items)} מקורות).</p>

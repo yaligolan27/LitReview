@@ -61,23 +61,50 @@ W_T3_MARKERS = ("blogspot.", "wordpress.", "medium.com", "substack.com",
                 "wikipedia.org")
 
 
-def _domain(url: str) -> str:
+# Two-part public suffixes where the registrable domain is the last THREE
+# labels (so foo.gov.uk and bar.gov.uk are distinct organizations, but
+# a.example.co.uk and b.example.co.uk are NOT).
+_MULTI_SUFFIXES = ("gov.uk", "ac.uk", "co.uk", "org.uk", "gov.il", "ac.il",
+                   "co.il", "org.il", "com.au", "gov.au", "edu.au", "co.jp",
+                   "go.jp", "ac.jp", "com.br", "gov.br", "co.in", "gov.in")
+
+
+def _host(url: str) -> str:
     try:
         host = urlparse(url).netloc.lower()
     except ValueError:
         return ""
+    host = host.split(":", 1)[0]
     return host[4:] if host.startswith("www.") else host
 
 
-def classify_tier(url: str) -> str:
-    """Deterministic domain tiering — hard code, no LLM (mechanism #9)."""
-    host = _domain(url)
+def _domain(url: str) -> str:
+    """Registrable domain (eTLD+1), so subdomains of one site are NOT treated
+    as independent sources during triangulation (e.g. www.nasa.gov and
+    science.nasa.gov both -> nasa.gov)."""
+    host = _host(url)
     if not host:
-        return "W-T3"
-    if any(marker in host for marker in W_T3_MARKERS):
+        return ""
+    labels = host.split(".")
+    for suffix in _MULTI_SUFFIXES:
+        if host == suffix or host.endswith("." + suffix):
+            n = suffix.count(".") + 2
+            return ".".join(labels[-n:])
+    return ".".join(labels[-2:]) if len(labels) >= 2 else host
+
+
+def classify_tier(url: str) -> str:
+    """Deterministic domain tiering — hard code, no LLM (mechanism #9).
+    T1 (authoritative suffix/domain) is checked before the T3 marker
+    substrings, so a legitimate .gov/.edu host is never demoted by a marker
+    that merely appears as a substring of its name."""
+    host = _host(url)
+    if not host:
         return "W-T3"
     if host in W_T1_DOMAINS or any(host.endswith(sfx) for sfx in W_T1_SUFFIXES):
         return "W-T1"
+    if any(marker in host for marker in W_T3_MARKERS):
+        return "W-T3"
     if host in W_T2_DOMAINS or any(host.endswith("." + d) for d in W_T2_DOMAINS):
         return "W-T2"
     return "W-T3"

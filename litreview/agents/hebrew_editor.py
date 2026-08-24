@@ -18,7 +18,12 @@ from ..core.context import RunContext
 from ..core.state import SurveyState
 
 _CITE = re.compile(r"\[(?:W?\d+(?:\s*[-,]\s*W?\d+)*)\]")
-_NUMBER = re.compile(r"\d+(?:\.\d+)?%?")
+# Capture an optional attached sign (hyphen-minus or U+2212) ONLY when it does
+# not immediately follow a digit/dot — so "2020-2026" stays two unsigned tokens
+# while a standalone "-0.8" keeps its sign. Without the sign, flipping -0.8 -> 0.8
+# was invisible to the guard (review finding).
+_NUMBER = re.compile(r"(?<![\d.])[-−]?\d+(?:\.\d+)?%?")
+_CALLOUT_COLOR = re.compile(r"\[CALLOUT:([a-zA-Z]+)\]")
 _TEXT_BLOCK = re.compile(r"===TEXT===\n(.*?)\n===END===", re.DOTALL)
 
 LEN_MIN_RATIO = 0.5
@@ -40,8 +45,14 @@ def _citations_set(text: str) -> frozenset[str]:
     return frozenset(m.group(0) for m in _CITE.finditer(text))
 
 
-def _numbers_counter(text: str) -> Counter:
-    return Counter(_NUMBER.findall(text))
+def _number_sequence(text: str) -> list[str]:
+    # Ordered list, not a multiset: reordering numbers (e.g. "from 100 to 250"
+    # -> "from 250 to 100") is a factual inversion the multiset would miss.
+    return _NUMBER.findall(text)
+
+
+def _callout_colors(text: str) -> list[str]:
+    return [c.lower() for c in _CALLOUT_COLOR.findall(text)]
 
 
 def safe_to_apply(original: str, edited: str) -> tuple[bool, str]:
@@ -54,7 +65,12 @@ def safe_to_apply(original: str, edited: str) -> tuple[bool, str]:
         return False, "citation set changed"
     if markers.marker_census(edited) != markers.marker_census(original):
         return False, "marker census changed"
-    if _numbers_counter(edited) != _numbers_counter(original):
+    # marker_census counts CALLOUT color-agnostically; a red->green flip changes
+    # meaning (danger vs. success) and must be caught here.
+    if _callout_colors(edited) != _callout_colors(original):
+        return False, "callout color changed"
+    # Ordered comparison catches both a changed value and reordered numbers.
+    if _number_sequence(edited) != _number_sequence(original):
         return False, "numbers changed"
     if markers.has_errors(edited) and not markers.has_errors(original):
         return False, "edit introduced marker lint errors"

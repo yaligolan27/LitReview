@@ -37,7 +37,10 @@ def strip_for_claims(text: str) -> str:
     text = re.sub(r"\[(?:TABLE|FORMULA|CASE|KPI|KPI_DATA|CONCLUSION|ROI_CALC|EXAMPLE)\]"
                   r".*?\[/(?:TABLE|FORMULA|CASE|KPI|KPI_DATA|CONCLUSION|ROI_CALC|EXAMPLE)\]",
                   " ", text, flags=re.DOTALL)
-    text = re.sub(r"\[CALLOUT(?::[a-zA-Z]+)?\](.*?)\[/CALLOUT\]", r" \1 ", text, flags=re.DOTALL)
+    # Callouts (key points, warnings, and the mandatory plain-language
+    # "בפשטות" box) are design/context elements, not standalone citable
+    # claims — remove them entirely so they are never grounded or flagged.
+    text = re.sub(r"\[CALLOUT(?::[a-zA-Z]+)?\](.*?)\[/CALLOUT\]", " ", text, flags=re.DOTALL)
     text = re.sub(r"\[TRL:\d+\]", " ", text)
     text = re.sub(r"^#{1,6}\s.*$", " ", text, flags=re.MULTILINE)
     text = text.replace("**", "")
@@ -129,10 +132,30 @@ def _apply_verdicts(sec: SurveySection, claims: list[Claim], verdicts) -> None:
             claim.status = "uncertain"
             claim.reason = (claim.reason + " (טענה ללא ציטוט)").strip()
         # Rule 2: softened rewrite applied to the content automatically.
-        if claim.status in ("uncertain", "unsupported") and claim.rewrite \
-                and claim.text in sec.content:
-            sec.content = sec.content.replace(claim.text, claim.rewrite, 1)
+        # claim.text comes from strip_for_claims (bold/markers removed,
+        # whitespace collapsed), so a direct substring match fails whenever the
+        # sentence carried **bold** or extra spacing — the softening was then
+        # silently skipped. Fall back to a markup-tolerant locate-and-replace.
+        if claim.status in ("uncertain", "unsupported") and claim.rewrite:
+            if not _locate_and_soften(sec, claim.text, claim.rewrite):
+                continue
             claim.text = claim.rewrite
+
+
+def _locate_and_soften(sec: SurveySection, claim_text: str, rewrite: str) -> bool:
+    if claim_text in sec.content:
+        sec.content = sec.content.replace(claim_text, rewrite, 1)
+        return True
+    # Tolerate bold markers and flexible whitespace between the claim's tokens.
+    tokens = [t for t in re.split(r"\s+", claim_text.strip()) if t]
+    if not tokens:
+        return False
+    pattern = r"[\*\s]*".join(re.escape(t) for t in tokens)
+    match = re.search(pattern, sec.content)
+    if match:
+        sec.content = sec.content[:match.start()] + rewrite + sec.content[match.end():]
+        return True
+    return False
 
 
 def _mark_cross_corroborated(sec: SurveySection, claims: list[Claim]) -> None:

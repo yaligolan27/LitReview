@@ -30,13 +30,19 @@ def _numbers_without_source(content: str) -> list[str]:
     prose = _INLINE_MATH.sub(" ", _BLOCKS.sub(" ", content))
     findings = []
     for match in _UNIT_NUMBER.finditer(prose):
-        window = prose[match.end():match.end() + 25]
         sentence_start = max(prose.rfind(".", 0, match.start()),
-                            prose.rfind("\n", 0, match.start())) + 1
-        sentence = prose[sentence_start:match.end() + 40]
+                             prose.rfind("\n", 0, match.start())) + 1
+        # Sentence END: the next terminator after the number, not a fixed
+        # 25-char window — otherwise a number whose [n] sits at the end of a
+        # long sentence is wrongly flagged as unsourced.
+        ends = [prose.find(t, match.end()) for t in (". ", ".\n", "\n", "! ", "? ")]
+        ends = [e for e in ends if e != -1]
+        sentence_end = min(ends) + 1 if ends else len(prose)
+        sentence = prose[sentence_start:sentence_end]
         if len(sentence.strip()) <= 25:
             continue
-        if not _CITE_NEAR.search(window):
+        # A citation anywhere in the number's own sentence counts as its source.
+        if not _CITE_NEAR.search(prose[match.end():sentence_end]):
             findings.append(match.group(0).strip())
     return findings
 

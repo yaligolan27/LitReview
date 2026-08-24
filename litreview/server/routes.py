@@ -527,6 +527,8 @@ def patch_chapter(request: Request, sid: str, index: int, body: dict,
     if not 1 <= index <= len(state.sections):
         raise HTTPException(404, "פרק לא נמצא")
     sec = state.sections[index - 1]
+    if _jobs(request).is_running(sid):
+        raise HTTPException(409, "לא ניתן לערוך בזמן ריצה פעילה — המתן לסיומה")
     new_content = str(body.get("content", ""))
     if not new_content.strip():
         raise HTTPException(422, "תוכן ריק")
@@ -555,6 +557,8 @@ def put_chapter_confidence(request: Request, sid: str, index: int, body: dict,
     state = _get_state(store, sid)
     if not 1 <= index <= len(state.sections):
         raise HTTPException(404, "פרק לא נמצא")
+    if _jobs(request).is_running(sid):
+        raise HTTPException(409, "לא ניתן לערוך בזמן ריצה פעילה — המתן לסיומה")
     value = str(body.get("value", "")).upper().strip()
     sec = state.sections[index - 1]
     if not value:
@@ -576,6 +580,8 @@ def put_claim(request: Request, sid: str, claim_id: str, body: dict,
               x_operator: str = Header(default="")):
     store = _store(request)
     state = _get_state(store, sid)
+    if _jobs(request).is_running(sid):
+        raise HTTPException(409, "לא ניתן לערוך בזמן ריצה פעילה — המתן לסיומה")
     status = str(body.get("status", "")).lower().strip()
     if status not in ("supported", "uncertain", "unsupported", ""):
         raise HTTPException(422, f"סטטוס לא חוקי: {status}")
@@ -605,6 +611,8 @@ def add_pin(request: Request, sid: str, index: int, body: dict,
     state = _get_state(store, sid)
     if not 1 <= index <= len(state.sections):
         raise HTTPException(404, "פרק לא נמצא")
+    if _jobs(request).is_running(sid):
+        raise HTTPException(409, "לא ניתן לערוך בזמן ריצה פעילה — המתן לסיומה")
     text = str(body.get("text", "")).strip()
     if not text:
         raise HTTPException(422, "הוראה ריקה")
