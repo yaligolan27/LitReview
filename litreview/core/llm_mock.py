@@ -119,16 +119,20 @@ def complete(prompt: str, purpose: str, system: str = "") -> str:
             "queries_run": 4,
             "pages_read": 6,
             "findings": [
-                {"id": "F1", "type": "market", "heading": "שחקן מוביל בתחום",
+                {"id": "F1", "sq": "SQ1", "type": "market",
+                 "heading": "שחקן מוביל בתחום",
                  "insight": "החברה המובילה הכריזה על מוצר חדש בתחום.",
                  "url": "https://example.gov/report-2026",
                  "source_name": "Gov Report", "date": "2026-01",
                  "quote": "The agency published its annual assessment."},
-                {"id": "F2", "type": "stat", "heading": "היקף שוק",
+                {"id": "F2", "sq": "SQ2", "type": "stat", "heading": "היקף שוק",
                  "insight": "היקף השוק מוערך בכ-2 מיליארד דולר.",
                  "url": "https://example-news.com/market-size",
                  "source_name": "Industry News", "date": "2025-11",
                  "quote": "The market is estimated at $2B."},
+                {"id": "F3", "type": "product", "heading": "ממצא בלי קישור",
+                 "insight": "ממצא שאמור להיזרק כי אין לו URL אמיתי.",
+                 "url": "not-a-url", "source_name": "?", "date": ""},
             ],
         })
 

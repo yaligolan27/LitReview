@@ -670,7 +670,8 @@ def approve_draft(request: Request, sid: str, body: dict | None = None,
 
 _EXPORT_PATTERNS = {"html": "survey_*.html", "pdf": "survey_*.pdf",
                     "docx": "survey_*.docx", "slides": "slides_*.md",
-                    "podcast": "notebooklm_*.txt"}
+                    "podcast": "notebooklm_*.txt",
+                    "bibtex": "bibliography_*.bib", "ris": "bibliography_*.ris"}
 
 
 def _pdf_available() -> bool:
@@ -733,6 +734,15 @@ def generate_exports(request: Request, sid: str, body: dict | None = None):
                 results[fmt] = build_podcast_text(ctx, state)
             elif fmt == "pdf":
                 results[fmt] = _print_pdf(store, ctx, state, sid)
+            elif fmt in ("bibtex", "ris"):
+                from ..agents import bib_export
+                from datetime import date as _date
+                ext = "bib" if fmt == "bibtex" else "ris"
+                out = store.outputs_dir(sid) / f"bibliography_{_date.today():%Y%m%d}.{ext}"
+                content = bib_export.to_bibtex(state.cited_papers) if fmt == "bibtex" \
+                    else bib_export.to_ris(state.cited_papers)
+                out.write_text(content, encoding="utf-8")
+                results[fmt] = str(out)
         except Exception as exc:  # noqa: BLE001
             results[fmt] = f"error: {exc}"
     store.save_state(sid, state)
@@ -765,6 +775,7 @@ def _print_pdf(store: SurveyStore, ctx, state, sid: str) -> str:
 from pathlib import Path  # noqa: E402
 
 _MEDIA = {"html": "text/html", "pdf": "application/pdf",
+          "bibtex": "application/x-bibtex", "ris": "application/x-research-info-systems",
           "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           "slides": "text/markdown", "podcast": "text/plain"}
 

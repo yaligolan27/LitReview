@@ -176,9 +176,30 @@ def build_web_sources(state: SurveyState) -> str:
             f'{esc(f.get("source_name") or f.get("url", ""))}</a> '
             f'({esc(f.get("date", ""))}) <span class="vlabel na">{esc(f.get("tier", ""))}</span>'
             f'{verdict}{quote}</li>')
+    extra = []
+    contradictions = (state.deep_research or {}).get("contradictions") or []
+    if contradictions:
+        rows = "".join(
+            f"<tr><td><b>{esc(c.get('topic', ''))}</b></td>"
+            f"<td>{esc(c.get('side_a', ''))}<br><span class='secs'>{esc(c.get('side_a_src', ''))}</span></td>"
+            f"<td>{esc(c.get('side_b', ''))}<br><span class='secs'>{esc(c.get('side_b_src', ''))}</span></td>"
+            f"<td>{esc(c.get('assessment', ''))}</td></tr>"
+            for c in contradictions)
+        extra.append(f"""<h3>⚔ סתירות ומתחים שזוהו</h3>
+<table class="tbl"><tr><th>נושא</th><th>צד א'</th><th>צד ב'</th><th>הערכה</th></tr>{rows}</table>""")
+    entities = (state.deep_research or {}).get("entities") or {}
+    if entities.get("rows"):
+        header = "".join(f"<th>{esc(c)}</th>" for c in entities.get("columns", []))
+        rows = "".join(
+            "<tr>" + "".join(f"<td>{esc(cell)}</td>" for cell in r["cells"]) +
+            f'<td><a href="{esc(r["source_url"])}">{esc(r.get("source_name", "מקור"))}</a></td></tr>'
+            for r in entities["rows"])
+        extra.append(f"""<h3>טבלת ישויות: {esc(entities.get('entity_type', ''))}</h3>
+<table class="tbl"><tr>{header}<th>מקור</th></tr>{rows}</table>""")
     return f"""<h2 class="chapter"><span>מחקר עומק — מקורות פתוחים</span></h2>
 <p class="secs">שכבה נפרדת מהביבליוגרפיה האקדמית. {esc(stats_line)}</p>
-<ol class="wsrc">{''.join(items)}</ol>"""
+<ol class="wsrc">{''.join(items)}</ol>
+{''.join(extra)}"""
 
 
 def build_toc(state: SurveyState) -> str:

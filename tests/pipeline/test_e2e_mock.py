@@ -55,6 +55,9 @@ def test_full_mock_run_produces_valid_rtl_html(tmp_path):
     assert "רעיונות שנוצרו על ידי המערכת" in html and "Generated Idea" in html
     assert 'class="formula"' in html and "MathJax" in html
     assert '<table class="tbl">' in html
+    # M5: deep-research layer, strictly separated from the bibliography.
+    assert "מחקר עומק — מקורות פתוחים" in html
+    assert 'class="wcite"' in html and "wsrc-1" in html
     # No raw block markers may survive conversion.
     for marker in ("[CALLOUT", "[FORMULA]", "[TABLE]", "[KPI]", "[CASE]", "\x00"):
         assert marker not in html, f"unconverted marker {marker!r}"

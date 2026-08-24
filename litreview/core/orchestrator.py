@@ -29,6 +29,7 @@ from ..agents import (
     toc_architect,
     writer,
 )
+from ..agents.deep_research import run_deep_research
 from ..agents.evaluator import run_evaluator
 from ..agents.executive_translator import run_executive_translator
 from ..agents.exports import run_extras
@@ -225,8 +226,8 @@ def build_stages(config: dict[str, Any]) -> dict[str, StageSpec]:
                   reliability_auditor.run_reliability_auditor,
                   critical=True, validate=val_papers_after_audit),
         StageSpec("fulltext", "Full-Text Retrieval", run_fulltext, critical=False),
-        StageSpec("deep_research", "Deep Research", _stub("deep_research", "M5"),
-                  critical=False),
+        StageSpec("deep_research", "Deep Research", run_deep_research,
+                  critical=False),   # never throws upward (spec §9.5.7)
         StageSpec("write", "Writer", writer.run_writer, critical=True,
                   validate=val_sections),
         StageSpec("ground", "Claim Grounder", claim_grounder.run_claim_grounder,

@@ -90,6 +90,11 @@ def review_section(sec: SurveySection) -> list[str]:
     if sec.effective_confidence() in ("LIMITED", "EMERGING"):
         issues.append(f"אמינות מקורות נמוכה לפרק: {sec.effective_confidence()}")
 
+    # The iron rule (spec §9.5.7): academic [n] and web [W#] never share
+    # one citation bracket — ❌ [2,W3] · ✅ [2] [W3].
+    if re.search(r"\[\d[^\]]*W\d|\[W\d[^\]]*,\s*\d", sec.content):
+        issues.append("ערבוב ציטוטים אסור: [n,W#] — הפרד לציטוטים נפרדים [n] [W#]")
+
     for number in _numbers_without_source(sec.content)[:4]:
         issues.append(f"מספר ללא מקור: \"{number}\" — הוסף ציטוט [n] או הסר")
 
