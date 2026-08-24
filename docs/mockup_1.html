@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מערכת סקרי ספרות AI — ממשק</title>
+<style>
+/* ===================================================================
+   Design tokens — מותאמים לתקן הזהב (survey_SRM_v2_full.html)
+   =================================================================== */
+:root{
+  --navy-900:#0a1535;
+  --navy-700:#1a3a8f;
+  --navy-600:#0d4e8a;
+  --blue-500:#4285f4;
+  --blue-600:#1565c0;
+  --bg:#eef0f4;
+  --ink:#1a1a2e;
+  --muted:#5a627a;
+  --line:#e0e4f0;
+  --surface:#ffffff;
+  --soft:#f8f9ff;
+  --cover:linear-gradient(135deg,#0a1535 0%,#1a3a8f 55%,#0d4e8a 100%);
+  /* confidence / trust */
+  --c-high-bg:#e8f5e9;   --c-high-fg:#2e7d32; --c-high-bd:#a5d6a7;
+  --c-mod-bg:#e3f2fd;    --c-mod-fg:#1565c0;  --c-mod-bd:#90caf9;
+  --c-lim-bg:#fff3e0;    --c-lim-fg:#e65100;  --c-lim-bd:#ffcc80;
+  --c-emg-bg:#ffebee;    --c-emg-fg:#c62828;  --c-emg-bd:#ef9a9a;
+  --shadow:0 1px 3px rgba(10,21,53,.08),0 6px 22px rgba(10,21,53,.06);
+  --shadow-lg:0 10px 40px rgba(10,21,53,.16);
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Segoe UI','Arial',sans-serif;
+  background:var(--bg);color:var(--ink);
+  font-size:15px;line-height:1.7;direction:rtl;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer}
+a{color:var(--navy-700)}
+::selection{background:#cfe0ff}
+
+/* ===================================================================
+   App shell
+   =================================================================== */
+.app{display:flex;min-height:100vh}
+/* right rail (RTL primary nav) */
+.rail{
+  width:74px;flex-shrink:0;background:var(--navy-900);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:18px 0;position:sticky;top:0;height:100vh;
+}
+.rail .logo{
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,#4285f4,#7b1fa2);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;color:#fff;font-size:20px;margin-bottom:14px;
+  box-shadow:0 4px 14px rgba(66,133,244,.4);
+}
+.rail .nav-ico{
+  width:46px;height:46px;border-radius:12px;border:none;background:transparent;
+  color:#9fb0d8;font-size:20px;display:flex;align-items:center;justify-content:center;
+  position:relative;transition:.15s;
+}
+.rail .nav-ico:hover{background:rgba(255,255,255,.08);color:#fff}
+.rail .nav-ico.active{background:rgba(66,133,244,.22);color:#fff}
+.rail .nav-ico.active::before{
+  content:"";position:absolute;right:-18px;top:50%;transform:translateY(-50%);
+  width:4px;height:24px;border-radius:4px;background:var(--blue-500);
+}
+.rail .nav-ico[data-tip]:hover::after{
+  content:attr(data-tip);position:absolute;right:56px;white-space:nowrap;
+  background:var(--navy-900);color:#fff;padding:5px 10px;border-radius:7px;
+  font-size:12px;box-shadow:var(--shadow);z-index:50;
+}
+.rail .spacer{flex:1}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+
+/* top bar */
+.topbar{
+  background:var(--surface);border-bottom:1px solid var(--line);
+  padding:0 26px;height:62px;display:flex;align-items:center;gap:18px;
+  position:sticky;top:0;z-index:40;
+}
+.topbar .crumb{font-weight:700;color:var(--navy-900);font-size:17px}
+.topbar .crumb small{color:var(--muted);font-weight:500;font-size:13px}
+.topbar .grow{flex:1}
+.search{
+  display:flex;align-items:center;gap:8px;background:var(--soft);
+  border:1px solid var(--line);border-radius:10px;padding:7px 12px;width:300px;
+}
+.search input{border:none;background:transparent;outline:none;flex:1;font-size:14px;color:var(--ink)}
+.operator{
+  display:flex;align-items:center;gap:8px;background:var(--soft);
+  border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:13.5px;
+}
+.operator .av{
+  width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1a3a8f,#7b1fa2);
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;
+}
+.operator select{border:none;background:transparent;font-family:inherit;font-size:13.5px;outline:none;font-weight:600;color:var(--navy-900)}
+
+.content{padding:26px 30px 60px;max-width:1280px;width:100%;margin:0 auto}
+
+/* ===================================================================
+   Flow stepper (screens 2–7)
+   =================================================================== */
+.flow{
+  display:flex;align-items:center;gap:0;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 18px;margin-bottom:24px;box-shadow:var(--shadow);overflow-x:auto;
+}
+.flow .step{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.flow .step .dot{
+  width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:14px;border:2px solid var(--line);background:#fff;color:var(--muted);
+}
+.flow .step.done .dot{background:var(--c-high-bg);border-color:var(--c-high-bd);color:var(--c-high-fg)}
+.flow .step.active .dot{background:var(--navy-700);border-color:var(--navy-700);color:#fff;box-shadow:0 0 0 4px rgba(26,58,143,.15)}
+.flow .step .lbl{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.flow .step.active .lbl{color:var(--navy-900)}
+.flow .step.done .lbl{color:var(--c-high-fg)}
+.flow .gate{
+  font-size:10px;background:#fff8e1;color:#9a6a00;border:1px solid #ffe082;
+  padding:1px 6px;border-radius:8px;font-weight:700;margin-right:4px;
+}
+.flow .arrow{flex:1;height:2px;background:var(--line);margin:0 12px;min-width:24px}
+.flow .step.done + .arrow{background:var(--c-high-bd)}
+.flow .step{cursor:pointer}
+
+/* ===================================================================
+   Generic components
+   =================================================================== */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.btn{
+  border:1px solid var(--line);background:#fff;color:var(--navy-900);
+  padding:9px 16px;border-radius:10px;font-size:14px;font-weight:600;transition:.15s;
+}
+.btn:hover{border-color:var(--navy-700);background:var(--soft)}
+.btn.primary{background:var(--navy-700);border-color:var(--navy-700);color:#fff}
+.btn.primary:hover{background:var(--navy-900)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--navy-700)}
+.btn.lg{padding:12px 22px;font-size:15px}
+.btn.sm{padding:6px 11px;font-size:13px}
+.btn.cta{
+  background:linear-gradient(135deg,#1a3a8f,#0d4e8a);border:none;color:#fff;
+  box-shadow:0 6px 18px rgba(26,58,143,.32);
+}
+.btn.cta:hover{filter:brightness(1.08)}
+.section-title{font-size:13px;font-weight:800;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;margin:0 0 12px}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:4px;border-radius:12px;padding:2px 11px;font-size:12px;font-weight:700;border:1px solid transparent}
+.badge.high{background:var(--c-high-bg);color:var(--c-high-fg);border-color:var(--c-high-bd)}
+.badge.mod{background:var(--c-mod-bg);color:var(--c-mod-fg);border-color:var(--c-mod-bd)}
+.badge.lim{background:var(--c-lim-bg);color:var(--c-lim-fg);border-color:var(--c-lim-bd)}
+.badge.emg{background:var(--c-emg-bg);color:var(--c-emg-fg);border-color:var(--c-emg-bd)}
+.badge.stage{background:#ede7f6;color:#5e35b1;border-color:#d1c4e9}
+.badge.stage.run{background:#e3f2fd;color:#1565c0;border-color:#90caf9}
+.badge.stage.done{background:var(--c-high-bg);color:var(--c-high-fg);border-color:var(--c-high-bd)}
+.badge.stage.wait{background:#f5f5f5;color:#757575;border-color:#e0e0e0}
+
+.chip{
+  display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #c5cae9;
+  border-radius:16px;padding:4px 12px;font-size:13px;font-weight:600;color:var(--navy-700);transition:.15s;
+}
+.chip.on{background:#e8f0fe;border-color:var(--blue-500)}
+.chip.off{background:#f3f4f8;border-color:var(--line);color:#9aa0b4}
+.chip .x{cursor:pointer;opacity:.6;font-weight:800}
+.chip .x:hover{opacity:1}
+.chip.add{border-style:dashed;color:var(--muted);cursor:pointer}
+
+.progress{height:8px;border-radius:6px;background:#e7eaf3;overflow:hidden}
+.progress>span{display:block;height:100%;background:linear-gradient(90deg,#1a3a8f,#4285f4);border-radius:6px}
+
+/* hide screens */
+.screen{display:none}
+.screen.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ===================================================================
+   Screen 1 — Dashboard
+   =================================================================== */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat{padding:18px 20px}
+.stat .num{font-size:2rem;font-weight:800;color:var(--navy-700);line-height:1}
+.stat .lbl{font-size:13px;color:var(--muted);margin-top:6px;font-weight:600}
+.stat.run .num{color:var(--blue-600)} .stat.done .num{color:var(--c-high-fg)}
+
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+.toolbar select,.toolbar .search{height:40px}
+.toolbar select{border:1px solid var(--line);background:#fff;border-radius:10px;padding:0 12px;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--navy-900);outline:none}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px}
+.s-card{padding:18px;position:relative;transition:.18s;cursor:pointer}
+.s-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:#c9d2ec}
+.s-card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.s-card h3{margin:0;font-size:16px;color:var(--navy-900);line-height:1.4}
+.s-card .meta{display:flex;gap:14px;color:var(--muted);font-size:13px;margin:10px 0 12px;flex-wrap:wrap}
+.s-card .meta b{color:var(--ink)}
+.s-card .vers{display:flex;gap:6px;margin-top:12px;align-items:center}
+.s-card .vers .vtag{
+  font-size:11.5px;font-weight:700;border-radius:7px;padding:2px 9px;background:#f3f4f8;
+  color:var(--muted);border:1px solid var(--line);
+}
+.s-card .vers .vtag.cur{background:#e8f0fe;color:var(--navy-700);border-color:var(--blue-500)}
+.s-card .del{
+  position:absolute;left:14px;bottom:14px;border:none;background:transparent;
+  font-size:16px;opacity:.4;transition:.15s;border-radius:8px;padding:4px 6px;
+}
+.s-card .del:hover{opacity:1;background:#ffebee}
+.s-card.new{
+  border:2px dashed #c2ccea;background:var(--soft);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;color:var(--navy-700);min-height:200px;
+}
+.s-card.new .plus{font-size:38px;line-height:1;margin-bottom:8px}
+.s-card.new:hover{border-color:var(--navy-700);background:#eef3ff}
+.s-card.gold{background:linear-gradient(135deg,#fff9e6,#fff3e0);border-color:#ffe082}
+.s-card.gold .crown{font-size:24px}
+
+/* ===================================================================
+   Two-column form layout
+   =================================================================== */
+.cols{display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start}
+@media(max-width:980px){.cols{grid-template-columns:1fr}}
+.panel{padding:24px}
+.field{margin-bottom:20px}
+.field label{display:block;font-weight:700;font-size:13.5px;color:var(--navy-900);margin-bottom:7px}
+.field .hint{font-weight:500;color:var(--muted);font-size:12.5px;margin-right:6px}
+.input,textarea,.fake-input{
+  width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 13px;
+  font-family:inherit;font-size:14.5px;color:var(--ink);background:#fff;outline:none;transition:.15s;
+}
+.input:focus,textarea:focus{border-color:var(--navy-700);box-shadow:0 0 0 3px rgba(26,58,143,.1)}
+textarea{resize:vertical;min-height:64px;line-height:1.6}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.goal-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.goal-row .input{flex:1}
+.goal-row .rm{border:none;background:#ffebee;color:#c62828;border-radius:8px;width:34px;height:34px;font-size:15px;flex-shrink:0}
+
+.green-box{background:linear-gradient(135deg,#e8f5e9,#e3f2fd);border:1px solid #a5d6a7;border-right:5px solid #2e7d32;border-radius:12px;padding:18px 20px;margin-bottom:20px}
+.green-box .gh{display:flex;align-items:center;gap:8px;font-weight:800;color:#1b5e20;margin-bottom:6px}
+.green-box .gsub{font-size:13px;color:#2e5d33;margin-bottom:14px}
+
+.scope-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.scope-opt{border:2px solid var(--line);border-radius:12px;padding:14px;text-align:center;cursor:pointer;transition:.15s;background:#fff}
+.scope-opt:hover{border-color:#c2ccea}
+.scope-opt.on{border-color:var(--navy-700);background:#eef3ff}
+.scope-opt .sn{font-size:22px;font-weight:800;color:var(--navy-700)}
+.scope-opt .sd{font-size:12.5px;color:var(--muted);margin-top:2px}
+
+.check{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:#fff;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--navy-700)}
+.check .ct{font-weight:600;font-size:14px}
+.check .cs{font-size:12.5px;color:var(--muted)}
+
+.side-list .si{padding:12px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:#fff;transition:.15s;cursor:pointer}
+.side-list .si:hover{border-color:var(--navy-700);background:var(--soft)}
+.side-list .si .st{font-weight:700;font-size:13.5px;color:var(--navy-900)}
+.side-list .si .sd{font-size:12px;color:var(--muted);margin-top:3px}
+
+.actions-bar{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:24px;
+  padding-top:20px;border-top:1px solid var(--line);
+}
+.sync-note{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+
+/* ===================================================================
+   Screen 3 — TOC
+   =================================================================== */
+.toc-meta{display:flex;gap:12px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+.toc-meter{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;padding:7px 14px;border-radius:10px}
+.toc-meter.ok{background:var(--c-high-bg);color:var(--c-high-fg);border:1px solid var(--c-high-bd)}
+.toc-meter.warn{background:var(--c-lim-bg);color:var(--c-lim-fg);border:1px solid var(--c-lim-bd)}
+.chapter{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden;transition:.15s}
+.chapter:hover{box-shadow:var(--shadow)}
+.ch-head{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--soft);border-bottom:1px solid var(--line)}
+.ch-head .grip{cursor:grab;color:#a7afca;font-size:18px}
+.ch-head .cidx{width:30px;height:30px;border-radius:50%;background:var(--navy-700);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ch-head .ctitle{flex:1;font-weight:700;font-size:15px;color:var(--navy-900);border:none;background:transparent;outline:none;font-family:inherit}
+.ch-head .ch-actions{display:flex;gap:4px}
+.icon-btn{border:none;background:transparent;border-radius:8px;width:32px;height:32px;font-size:15px;color:var(--muted)}
+.icon-btn:hover{background:#fff;color:var(--navy-700);box-shadow:var(--shadow)}
+.ch-secs{padding:10px 16px 14px}
+.sec-item{display:flex;align-items:center;gap:8px;padding:6px 0;color:var(--ink);font-size:14px}
+.sec-item .sb{color:var(--blue-500);font-weight:800}
+.sec-item .input{padding:6px 10px}
+.sec-add{font-size:13px;color:var(--navy-700);border:none;background:transparent;font-weight:600;padding:6px 0;margin-top:4px}
+.suggest{background:#fff8e1;border:1px solid #ffe082;border-right:5px solid #f9a825;border-radius:12px;padding:16px 18px;margin-top:16px}
+.suggest h4{margin:0 0 10px;color:#9a6a00;display:flex;align-items:center;gap:8px}
+.suggest .sug{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #ffe082;border-radius:9px;padding:9px 12px;margin-bottom:7px;font-size:13.5px}
+.suggest .sug button{border:none;background:#fff3e0;color:#e65100;border-radius:8px;padding:4px 12px;font-weight:700;font-size:12.5px}
+
+/* ===================================================================
+   Screen 4 — Sources table
+   =================================================================== */
+.tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line)}
+table.src{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff;min-width:920px}
+table.src th{background:var(--navy-900);color:#fff;padding:11px 12px;text-align:right;font-weight:600;font-size:12.5px;white-space:nowrap;position:sticky;top:0}
+table.src td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+table.src tr:nth-child(even) td{background:var(--soft)}
+table.src tr:hover td{background:#e8f0fe}
+table.src .ttl{font-weight:600;color:var(--navy-900);max-width:280px}
+table.src .auth{color:var(--muted);font-size:12.5px}
+table.src tr.unver td{background:#ffebee !important}
+table.src tr.unver:hover td{background:#ffdfe1 !important}
+.doi-link{color:var(--blue-600);text-decoration:none;font-weight:600;font-size:12.5px}
+.doi-link:hover{text-decoration:underline}
+.lang-pill{background:#ede7f6;color:#5e35b1;border-radius:8px;padding:1px 8px;font-size:11.5px;font-weight:700}
+.warn-doi{color:#c62828;font-weight:700;font-size:12px;display:flex;align-items:center;gap:4px}
+input[type=checkbox].rowcb{width:17px;height:17px;accent-color:var(--navy-700)}
+.src-filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.src-filters select,.src-filters .search{height:38px}
+.mini-check{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:var(--navy-900);background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 13px;cursor:pointer}
+
+/* ===================================================================
+   Screen 5 — Pipeline run
+   =================================================================== */
+.run-grid{display:grid;grid-template-columns:380px 1fr;gap:22px;align-items:start}
+@media(max-width:980px){.run-grid{grid-template-columns:1fr}}
+.stepper{padding:8px 4px}
+.agent{display:flex;gap:14px;padding:12px 16px;position:relative}
+.agent::before{content:"";position:absolute;right:31px;top:40px;bottom:-12px;width:2px;background:var(--line)}
+.agent:last-child::before{display:none}
+.agent .ai{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:13px;z-index:1;border:2px solid var(--line);background:#fff;color:var(--muted);
+}
+.agent.done .ai{background:var(--c-high-bg);border-color:var(--c-high-bd);color:var(--c-high-fg)}
+.agent.run .ai{background:var(--navy-700);border-color:var(--navy-700);color:#fff}
+.agent.wait .ai{background:#fff;color:#bbb}
+.agent .meta-a{flex:1;min-width:0}
+.agent .an{font-weight:700;font-size:14px;color:var(--navy-900)}
+.agent .ad{font-size:12px;color:var(--muted)}
+.agent .at{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.agent.run .at{color:var(--blue-600);font-weight:700}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.log{background:#0b1020;border-radius:12px;padding:16px 18px;font-family:'SF Mono','Courier New',monospace;font-size:12.5px;line-height:1.85;height:420px;overflow:auto;direction:ltr;text-align:left;color:#c7d0e8}
+.log .ok{color:#7ee787} .log .info{color:#79c0ff} .log .warn{color:#f0c674} .log .err{color:#ff7b72}
+.log .t{color:#6e7681;margin-left:8px}
+.run-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.run-head .chap{font-weight:700;color:var(--navy-900)}
+
+/* ===================================================================
+   Screen 6 — Draft & review
+   =================================================================== */
+.draft-grid{display:grid;grid-template-columns:210px 1fr 300px;gap:18px;align-items:start}
+@media(max-width:1100px){.draft-grid{grid-template-columns:1fr}}
+.chap-nav{padding:12px}
+.chap-nav .cn{padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.chap-nav .cn:hover{background:var(--soft)}
+.chap-nav .cn.on{background:#e8f0fe;color:var(--navy-700)}
+.chap-nav .cn .dotc{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.editor{padding:26px 30px;min-height:520px}
+.editor h2{color:var(--navy-900);font-size:1.4rem;margin:0 0 4px;border-bottom:3px solid var(--navy-700);padding-bottom:10px}
+.editor .conf-bar{display:flex;align-items:center;gap:10px;margin:14px 0 18px;flex-wrap:wrap}
+.editor [contenteditable]{outline:none;line-height:1.85;font-size:15px}
+.editor [contenteditable]:focus{box-shadow:none}
+.editor p{margin:0 0 14px}
+cite{color:var(--navy-700);font-weight:600;font-style:normal;background:#e8f0fe;border-radius:5px;padding:0 5px;cursor:pointer}
+cite:hover{background:#cfe0ff}
+.claim-sel{background:#fff9c4;border-radius:4px;box-shadow:inset 0 -2px 0 #f9a825}
+.callout{background:#e8f0fe;border-radius:8px;padding:13px 16px;margin:16px 0;border-right:4px solid var(--blue-500);font-size:14px}
+.pin{background:#fff3e0;border:1px dashed #ffb74d;border-radius:10px;padding:12px 14px;margin:14px 0;font-size:13.5px;color:#e65100;display:flex;gap:8px;align-items:flex-start}
+.conf-pick{display:flex;gap:6px}
+.conf-pick .cp{font-size:11.5px;font-weight:700;border-radius:9px;padding:4px 10px;border:1px solid var(--line);background:#fff;color:var(--muted)}
+.conf-pick .cp.on.high{background:var(--c-high-bg);color:var(--c-high-fg);border-color:var(--c-high-bd)}
+.conf-pick .cp.on.mod{background:var(--c-mod-bg);color:var(--c-mod-fg);border-color:var(--c-mod-bd)}
+.conf-pick .cp.on.lim{background:var(--c-lim-bg);color:var(--c-lim-fg);border-color:var(--c-lim-bd)}
+.conf-pick .cp.on.emg{background:var(--c-emg-bg);color:var(--c-emg-fg);border-color:var(--c-emg-bd)}
+.side-tabs{display:flex;gap:4px;margin-bottom:14px}
+.side-tabs .st{flex:1;text-align:center;padding:8px;border-radius:9px;font-size:13px;font-weight:700;background:var(--soft);color:var(--muted);cursor:pointer}
+.side-tabs .st.on{background:var(--navy-700);color:#fff}
+.issue{display:flex;gap:9px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;font-size:13px;background:#fff}
+.issue .ic{flex-shrink:0;font-size:15px}
+.issue.warn{border-right:4px solid #f9a825}
+.issue.err{border-right:4px solid #c62828}
+.stat-mini{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.stat-mini .sm{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center}
+.stat-mini .sm .n{font-size:1.5rem;font-weight:800;color:var(--navy-700)}
+.stat-mini .sm .l{font-size:11.5px;color:var(--muted)}
+.instr-box{margin-top:14px}
+.instr-box textarea{min-height:70px}
+
+/* ===================================================================
+   Screen 7 — Preview & export
+   =================================================================== */
+.exp-grid{display:grid;grid-template-columns:1fr 340px;gap:22px;align-items:start}
+@media(max-width:980px){.exp-grid{grid-template-columns:1fr}}
+.preview{border-radius:14px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow);background:#fff}
+.preview .pv-cover{background:var(--cover);color:#fff;padding:38px 34px;text-align:center}
+.preview .pv-cover .k{font-size:12px;letter-spacing:.12em;opacity:.8;text-transform:uppercase}
+.preview .pv-cover h1{margin:10px 0 6px;font-size:1.7rem;line-height:1.3}
+.preview .pv-cover .sub{opacity:.85;font-size:14px}
+.preview .pv-body{padding:26px 30px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.kpi{background:linear-gradient(135deg,#e8f0fe,#f3e8ff);border-radius:10px;padding:14px;border-right:4px solid var(--navy-700)}
+.kpi .num{font-size:1.7rem;font-weight:800;color:var(--navy-700);line-height:1}
+.kpi .desc{font-size:12px;font-weight:600;margin-top:5px}
+.conc-box{background:linear-gradient(135deg,#e8f5e9,#e3f2fd);border-radius:10px;padding:18px;border-right:5px solid #2e7d32;margin-top:6px}
+.conc-box h3{color:#1b5e20;margin:0 0 10px;font-size:1.05rem}
+.conc-box ul{margin:0;padding:0;list-style:none}
+.conc-box li{padding:5px 0 5px 0;display:flex;gap:8px;font-size:14px}
+.conc-box li::before{content:"✓";color:#2e7d32;font-weight:800}
+.exp-card{display:flex;align-items:center;gap:14px;padding:15px 16px;border:1px solid var(--line);border-radius:12px;margin-bottom:11px;background:#fff;transition:.15s}
+.exp-card:hover{box-shadow:var(--shadow)}
+.exp-card .ei{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;color:#fff}
+.exp-card .en{flex:1}
+.exp-card .en b{display:block;color:var(--navy-900);font-size:14.5px}
+.exp-card .en span{font-size:12px;color:var(--muted)}
+.exp-status{font-size:12px;font-weight:700;padding:3px 10px;border-radius:9px}
+.exp-status.ready{background:var(--c-high-bg);color:var(--c-high-fg)}
+.exp-status.gen{background:var(--c-mod-bg);color:var(--c-mod-fg)}
+.exp-status.idle{background:#f3f4f8;color:#9aa0b4}
+
+/* misc */
+.notice{background:#fff8e1;border-right:5px solid #f9a825;border-radius:8px;padding:12px 16px;font-size:13px;color:#5d4037;display:flex;gap:10px;align-items:flex-start;margin-bottom:18px}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.page-head h1{margin:0;font-size:1.5rem;color:var(--navy-900)}
+.page-head p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+.toast{position:fixed;bottom:24px;left:24px;background:var(--navy-900);color:#fff;padding:13px 20px;border-radius:12px;box-shadow:var(--shadow-lg);font-size:14px;font-weight:600;z-index:100;opacity:0;transform:translateY(10px);transition:.25s;display:flex;gap:10px;align-items:center}
+.toast.show{opacity:1;transform:none}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ Right rail ============ -->
+  <nav class="rail">
+    <div class="logo">ס</div>
+    <button class="nav-ico active" data-tip="דשבורד" data-go="dashboard">▦</button>
+    <button class="nav-ico" data-tip="הגדרת סקר" data-go="brief">✎</button>
+    <button class="nav-ico" data-tip="תוכן עניינים" data-go="toc">☰</button>
+    <button class="nav-ico" data-tip="מקורות" data-go="sources">📚</button>
+    <button class="nav-ico" data-tip="ריצת המערכת" data-go="pipeline">⚙</button>
+    <button class="nav-ico" data-tip="עריכת טיוטה" data-go="draft">✐</button>
+    <button class="nav-ico" data-tip="ייצוא" data-go="export">⤓</button>
+    <div class="spacer"></div>
+  </nav>
+
+  <div class="main">
+    <!-- ============ Top bar ============ -->
+    <header class="topbar">
+      <div class="crumb" id="crumb">דשבורד <small id="crumbSub">— כל הסקרים</small></div>
+      <div class="grow"></div>
+      <div class="search" id="globalSearch">
+        <span>🔍</span><input placeholder="חיפוש סקרים, נושאים, מחברים…">
+      </div>
+      <div class="operator">
+        <span class="av">י</span>
+        <span>מפעיל:</span>
+        <select><option>יונתן</option><option>נועה</option><option>אבי</option><option>+ מפעיל חדש</option></select>
+      </div>
+    </header>
+
+    <div class="content">
+
+    <!-- =================================================================
+         SCREEN 1 — DASHBOARD
+         ================================================================= -->
+    <section class="screen active" id="dashboard">
+      <div class="page-head">
+        <div><h1>הסקרים שלי</h1><p>נקודת כניסה — צפייה, המשך וניהול גרסאות של סקרי ספרות.</p></div>
+        <button class="btn cta lg" data-go="brief">+ סקר חדש</button>
+      </div>
+
+      <div class="stat-row">
+        <div class="card stat"><div class="num">12</div><div class="lbl">סה״כ סקרים</div></div>
+        <div class="card stat run"><div class="num">3</div><div class="lbl">בתהליך</div></div>
+        <div class="card stat done"><div class="num">9</div><div class="lbl">הושלמו</div></div>
+        <div class="card stat"><div class="num">541</div><div class="lbl">מאמרים שנותחו</div></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search" style="width:260px"><span>🔍</span><input placeholder="חיפוש לפי נושא…"></div>
+        <select><option>סטטוס: הכל</option><option>הגדרה</option><option>תוכן עניינים</option><option>מקורות</option><option>כתיבה</option><option>ביקורת</option><option>הושלם</option></select>
+        <select><option>מפעיל: הכל</option><option>יונתן</option><option>נועה</option><option>אבי</option></select>
+        <select><option>מיון: עדכני ביותר</option><option>אלפביתי</option><option>מס׳ מקורות</option></select>
+      </div>
+
+      <div class="grid">
+        <!-- new -->
+        <div class="card s-card new" data-go="brief">
+          <div class="plus">+</div>
+          <b>סקר חדש</b>
+          <span style="font-size:13px;color:var(--muted);margin-top:4px">התחל מהגדרת נושא</span>
+        </div>
+
+        <!-- gold standard -->
+        <div class="card s-card gold">
+          <div class="top">
+            <h3><span class="crown">👑</span> נחיר SRM — סקירה מקיפה</h3>
+          </div>
+          <span class="badge" style="background:#fff3e0;color:#e65100;border-color:#ffcc80">תקן הזהב הנוכחי</span>
+          <div class="meta"><span><b>71</b> מקורות</span><span>14 פרקים</span><span>14.5.26</span></div>
+          <button class="btn sm" style="width:100%;margin-top:6px" onclick="toast('בחר סקר אחר להגדרה כתקן הזהב')">⇄ החלף תקן זהב</button>
+        </div>
+
+        <!-- survey 1 -->
+        <div class="card s-card" data-go="draft">
+          <div class="top">
+            <h3>סוכני AI אוטונומיים בארגונים</h3>
+            <span class="badge stage run">✍ בכתיבה</span>
+          </div>
+          <div class="progress"><span style="width:72%"></span></div>
+          <div class="meta"><span><b>47</b> מקורות</span><span>פרק 7/11</span><span>נועה · 8.6.26</span></div>
+          <div class="vers">גרסאות:
+            <span class="vtag cur">v3</span><span class="vtag">v2</span><span class="vtag">v1</span>
+          </div>
+          <button class="del" title="מחק" onclick="delCard(event)">🗑</button>
+        </div>
+
+        <!-- survey 2 -->
+        <div class="card s-card" data-go="export">
+          <div class="top">
+            <h3>אחזור פאזה באופטיקה חישובית</h3>
+            <span class="badge stage done">✓ הושלם</span>
+          </div>
+          <div class="progress"><span style="width:100%"></span></div>
+          <div class="meta"><span><b>63</b> מקורות</span><span>9 פרקים</span><span>יונתן · 1.6.26</span></div>
+          <div class="vers">גרסאות:
+            <span class="vtag cur">v2</span><span class="vtag">v1</span>
+          </div>
+          <button class="del" title="מחק" onclick="delCard(event)">🗑</button>
+        </div>
+
+        <!-- survey 3 -->
+        <div class="card s-card" data-go="sources">
+          <div class="top">
+            <h3>חומרים קומפוזיטיים בנחירי מנועי רקטה</h3>
+            <span class="badge stage">📚 אישור מקורות</span>
+          </div>
+          <div class="progress"><span style="width:40%"></span></div>
+          <div class="meta"><span><b>38</b> מקורות</span><span>ממתין לאישור</span><span>אבי · 11.6.26</span></div>
+          <div class="vers">גרסאות: <span class="vtag cur">v1</span></div>
+          <button class="del" title="מחק" onclick="delCard(event)">🗑</button>
+        </div>
+
+        <!-- survey 4 -->
+        <div class="card s-card" data-go="toc">
+          <div class="top">
+            <h3>כלים מבוססי-AI לסקירת ספרות</h3>
+            <span class="badge stage">☰ תוכן עניינים</span>
+          </div>
+          <div class="progress"><span style="width:18%"></span></div>
+          <div class="meta"><span><b>0</b> מקורות</span><span>עריכת TOC</span><span>יונתן · 13.6.26</span></div>
+          <div class="vers">גרסאות: <span class="vtag cur">v1</span></div>
+          <button class="del" title="מחק" onclick="delCard(event)">🗑</button>
+        </div>
+
+        <!-- survey 5 -->
+        <div class="card s-card" data-go="pipeline">
+          <div class="top">
+            <h3>מודלים מולטימודליים ברפואה</h3>
+            <span class="badge stage run">⚙ ריצה</span>
+          </div>
+          <div class="progress"><span style="width:55%"></span></div>
+          <div class="meta"><span><b>52</b> מקורות</span><span>פרק 5/12</span><span>נועה · 13.6.26</span></div>
+          <div class="vers">גרסאות: <span class="vtag cur">v1</span></div>
+          <button class="del" title="מחק" onclick="delCard(event)">🗑</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================
+         SCREEN 2 — BRIEF  (Agent 1 · ResearchBrief)
+         ================================================================= -->
+    <section class="screen" id="brief">
+      <div id="flow-brief"></div>
+      <div class="page-head">
+        <div><h1>הגדרת סקר</h1><p>סוכן 1 · איסוף ה־ResearchBrief. שינויים מסתנכרנים אוטומטית עם תוכן העניינים.</p></div>
+      </div>
+
+      <div class="cols">
+        <div class="card panel">
+          <div class="row2">
+            <div class="field">
+              <label>נושא הסקר (עברית) <span class="hint">לתצוגה ולכתיבה</span></label>
+              <input class="input" value="סוכני AI אוטונומיים בארגונים">
+            </div>
+            <div class="field">
+              <label>נושא לחיפוש (אנגלית) <span class="hint">למאגרים</span></label>
+              <input class="input" dir="ltr" value="Autonomous AI agents in organizations">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>מטרות הסקר</label>
+            <div id="goals">
+              <div class="goal-row"><input class="input" value="מיפוי ארכיטקטורות סוכן מובילות"><button class="rm" onclick="this.parentElement.remove()">✕</button></div>
+              <div class="goal-row"><input class="input" value="השוואת מסגרות אורקסטרציה"><button class="rm" onclick="this.parentElement.remove()">✕</button></div>
+              <div class="goal-row"><input class="input" value="זיהוי פערים ואתגרי אמינות"><button class="rm" onclick="this.parentElement.remove()">✕</button></div>
+            </div>
+            <button class="btn sm" onclick="addGoal()">+ הוסף מטרה</button>
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <label>קהל יעד</label>
+              <input class="input" value="חוקרים ואנשי מקצוע בתעשייה">
+            </div>
+            <div class="field">
+              <label>טווח שנים</label>
+              <div class="row2"><input class="input" type="number" value="2019" placeholder="מ-"><input class="input" type="number" value="2026" placeholder="עד"></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>שפות חיפוש <span class="hint">כברירת מחדל כל השפות שהוגדרו מסומנות</span></label>
+            <div id="langs" style="display:flex;flex-wrap:wrap;gap:8px">
+              <span class="chip on" onclick="togChip(this)">English <span class="x">✕</span></span>
+              <span class="chip on" onclick="togChip(this)">עברית <span class="x">✕</span></span>
+              <span class="chip on" onclick="togChip(this)">Русский <span class="x">✕</span></span>
+              <span class="chip on" onclick="togChip(this)">Deutsch <span class="x">✕</span></span>
+              <span class="chip on" onclick="togChip(this)">Español <span class="x">✕</span></span>
+              <span class="chip on" onclick="togChip(this)">中文 <span class="x">✕</span></span>
+              <span class="chip on" onclick="togChip(this)">日本語 <span class="x">✕</span></span>
+              <span class="chip on" onclick="togChip(this)">Português <span class="x">✕</span></span>
+              <span class="chip add" onclick="toast('בחר שפה נוספת')">+ שפה</span>
+            </div>
+          </div>
+
+          <!-- additional sources (green box) -->
+          <div class="green-box">
+            <div class="gh">➕ מקורות נוספים <span style="font-weight:600;font-size:12px">(לא חובה)</span></div>
+            <div class="gsub">הכלי כבר מאתר מקורות בעצמו. כאן אפשר <b>להוסיף</b> מאמרים/מומחים שחשוב לכלול — זו תוספת, לא תחליף.</div>
+            <div class="field" style="margin-bottom:12px">
+              <label>מאמרים ידועים (DOI / כותרת)</label>
+              <textarea class="input" placeholder="10.1145/3586183 · &quot;ReAct: Synergizing Reasoning and Acting&quot;…"></textarea>
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>מומחים / קבוצות מחקר</label>
+              <textarea class="input" placeholder="שמות חוקרים או מעבדות שכדאי לעקוב אחרי הפרסומים שלהם…"></textarea>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>היקף הסקר</label>
+            <div class="scope-opts">
+              <div class="scope-opt" onclick="pickScope(this)"><div class="sn">~10</div><div class="sd">תמצית עמודים</div></div>
+              <div class="scope-opt on" onclick="pickScope(this)"><div class="sn">30–40</div><div class="sd">סקר מלא</div></div>
+              <div class="scope-opt" onclick="pickScope(this)"><div class="sn">✎</div><div class="sd">מותאם אישית</div></div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-bottom:0">
+            <label>פלטים נוספים <span class="hint">אופציונלי</span></label>
+            <label class="check"><input type="checkbox"><span><span class="ct">🎞 מצגת</span> <span class="cs">— תקציר מנהלים כשקופיות</span></span></label>
+            <label class="check"><input type="checkbox"><span><span class="ct">🎧 פודקאסט</span> <span class="cs">— הוראות + טקסט ל-NotebookLM</span></span></label>
+          </div>
+
+          <div class="actions-bar">
+            <div class="sync-note">🔄 מסונכרן אוטומטית עם תוכן העניינים</div>
+            <div style="display:flex;gap:10px">
+              <button class="btn" onclick="toast('הטיוטה נשמרה')">שמור טיוטה</button>
+              <button class="btn cta" data-go="toc">בנה תוכן עניינים ←</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- side: saved drafts -->
+        <aside class="card panel">
+          <div class="section-title">💾 טיוטות הגדרה שמורות</div>
+          <div class="side-list">
+            <div class="si" onclick="toast('נטענה טיוטה')"><div class="st">סוכני AI אוטונומיים</div><div class="sd">נערך לפני 2 שעות · נועה</div></div>
+            <div class="si" onclick="toast('נטענה טיוטה')"><div class="st">מודלים מולטימודליים ברפואה</div><div class="sd">אתמול · נועה</div></div>
+            <div class="si" onclick="toast('נטענה טיוטה')"><div class="st">אבטחת LLM ו-prompt injection</div><div class="sd">10.6.26 · יונתן</div></div>
+            <div class="si" onclick="toast('נטענה טיוטה')"><div class="st">RAG בארגונים</div><div class="sd">7.6.26 · אבי</div></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- =================================================================
+         SCREEN 3 — TOC  (Agent 2 · approval gate)
+         ================================================================= -->
+    <section class="screen" id="toc">
+      <div id="flow-toc"></div>
+      <div class="page-head">
+        <div><h1>תוכן עניינים</h1><p>סוכן 2 · עריכה ואישור. גרור פרקים לסידור, הוסף/מחק/ערוך. <b>נקודת אישור אנושי.</b></p></div>
+      </div>
+
+      <div class="toc-meta">
+        <div class="toc-meter ok" id="chMeter">✓ 9 פרקים — עומד בדרישת התקן (≥8)</div>
+        <div style="flex:1"></div>
+        <button class="btn sm" onclick="addChapter()">+ הוסף פרק</button>
+      </div>
+
+      <div id="chapters">
+        <!-- chapters injected by JS -->
+      </div>
+
+      <div class="suggest">
+        <h4>💡 הצעות אוטומטיות למילוי פערים</h4>
+        <div class="sug"><span>פרק מוצע: <b>שיקולים אתיים ורגולציה</b> — חסר בנושא סוכנים אוטונומיים</span><button onclick="acceptSug(this)">+ הוסף</button></div>
+        <div class="sug"><span>תת-סעיף מוצע: <b>Benchmarks והערכת ביצועים</b> תחת "השוואת מסגרות"</span><button onclick="acceptSug(this)">+ הוסף</button></div>
+      </div>
+
+      <div class="actions-bar">
+        <button class="btn ghost" data-go="brief">← חזרה להגדרה</button>
+        <button class="btn cta lg" data-go="sources">אשר והמשך לאיסוף מקורות ←</button>
+      </div>
+    </section>
+
+    <!-- =================================================================
+         SCREEN 4 — SOURCES  (Agents 3–4 · approval gate)
+         ================================================================= -->
+    <section class="screen" id="sources">
+      <div id="flow-sources"></div>
+      <div class="page-head">
+        <div><h1>מקורות</h1><p>סוכנים 3–4 · סקירה, סינון ואישור מאמרים כולל ביקורת אמינות (Reliability Auditor). <b>נקודת אישור.</b></p></div>
+      </div>
+
+      <div class="notice">⚠️ <b>2 מאמרים</b> נכשלו באימות DOI מול Crossref ומסומנים באדום. הסר אותם או אמת ידנית לפני האישור.</div>
+
+      <div class="src-filters">
+        <div class="search" style="width:240px"><span>🔍</span><input placeholder="חיפוש כותרת/מחבר…"></div>
+        <select><option>שנה: הכל</option><option>2024–2026</option><option>2020–2023</option><option>לפני 2020</option></select>
+        <select><option>רמת אמון: הכל</option><option>HIGH</option><option>MODERATE</option><option>LIMITED</option><option>EMERGING</option></select>
+        <label class="mini-check"><input type="checkbox" class="rowcb"> מאומתים בלבד</label>
+        <div style="flex:1"></div>
+        <button class="btn sm" onclick="toast('פתח טופס הוספה ידנית')">+ הוסף מקור</button>
+        <button class="btn sm" onclick="toast('מריץ חיפוש נוסף…')">🔁 חפש עוד</button>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="src">
+          <thead><tr>
+            <th><input type="checkbox" class="rowcb" id="selAll" onclick="selectAll(this)"></th>
+            <th>כותרת</th><th>מחברים</th><th>שנה</th><th>שפה</th><th>ציטוטים</th><th>אמון</th><th>DOI</th><th>מקור</th>
+          </tr></thead>
+          <tbody id="srcBody"><!-- rows injected by JS --></tbody>
+        </table>
+      </div>
+
+      <div class="actions-bar">
+        <div class="sync-note">נבחרו <b id="selCount" style="color:var(--navy-700)">36</b> מתוך <span id="selTotal">38</span> מקורות</div>
+        <button class="btn cta lg" data-go="pipeline">אשר <span id="selCount2">36</span> מקורות והתחל כתיבה ←</button>
+      </div>
+    </section>
+
+    <!-- =================================================================
+         SCREEN 5 — PIPELINE RUN  (Agents 5–11)
+         ================================================================= -->
+    <section class="screen" id="pipeline">
+      <div id="flow-pipeline"></div>
+      <div class="page-head">
+        <div><h1>ריצת המערכת</h1><p>סוכנים 5–11 · מעקב חי אחרי הכתיבה, הביקורת וההפקה.</p></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn" id="runToggle" onclick="toggleRun()">▶ הפעל ריצה</button>
+          <button class="btn" onclick="toast('נפתחת טיוטה חלקית')">📄 טיוטה חלקית</button>
+        </div>
+      </div>
+
+      <div class="card panel" style="margin-bottom:22px">
+        <div class="run-head">
+          <div class="chap">התקדמות כללית · <span id="chapCount">פרק 0/11</span></div>
+          <div style="font-weight:800;color:var(--navy-700)" id="pctLabel">0%</div>
+        </div>
+        <div class="progress"><span id="overallBar" style="width:0%"></span></div>
+      </div>
+
+      <div class="run-grid">
+        <div class="card stepper" id="stepper"><!-- agents injected by JS --></div>
+        <div>
+          <div class="section-title">📟 לוג חי (stdout מהסוכנים)</div>
+          <div class="log" id="logBox"><span class="t">[00:00]</span> <span class="info">ממתין להפעלת הריצה…</span><br></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================
+         SCREEN 6 — DRAFT & REVIEW  (Agents 5–6 · approval gate)
+         ================================================================= -->
+    <section class="screen" id="draft">
+      <div id="flow-draft"></div>
+      <div class="page-head">
+        <div><h1>עריכת טיוטה</h1><p>סוכנים 5–6 · עריכה אנושית והערות המבקר. <b>נקודת אישור אחרונה לפני הפקה.</b></p></div>
+      </div>
+
+      <div class="draft-grid">
+        <!-- chapter nav -->
+        <aside class="card chap-nav">
+          <div class="section-title" style="padding:4px 8px">פרקים</div>
+          <div class="cn on"><span>1. מבוא ורקע</span><span class="dotc" style="background:#2e7d32"></span></div>
+          <div class="cn"><span>2. ארכיטקטורות סוכן</span><span class="dotc" style="background:#2e7d32"></span></div>
+          <div class="cn"><span>3. מסגרות אורקסטרציה</span><span class="dotc" style="background:#1565c0"></span></div>
+          <div class="cn"><span>4. זיכרון וכלים</span><span class="dotc" style="background:#1565c0"></span></div>
+          <div class="cn"><span>5. אמינות ובקרה</span><span class="dotc" style="background:#e65100"></span></div>
+          <div class="cn"><span>6. הערכת ביצועים</span><span class="dotc" style="background:#e65100"></span></div>
+          <div class="cn"><span>7. אתגרים ופערים</span><span class="dotc" style="background:#c62828"></span></div>
+        </aside>
+
+        <!-- editor -->
+        <div class="card editor">
+          <h2>2. ארכיטקטורות סוכן</h2>
+          <div class="conf-bar">
+            <span style="font-size:13px;font-weight:700;color:var(--muted)">רמת אמינות הפרק:</span>
+            <div class="conf-pick" data-scope="chapter">
+              <span class="cp high on" onclick="pickConf(this)">HIGH</span>
+              <span class="cp mod" onclick="pickConf(this)">MODERATE</span>
+              <span class="cp lim" onclick="pickConf(this)">LIMITED</span>
+              <span class="cp emg" onclick="pickConf(this)">EMERGING</span>
+            </div>
+          </div>
+
+          <div contenteditable="true" spellcheck="false">
+            <p>הספרות מבחינה בין שלוש משפחות ארכיטקטורה מרכזיות לסוכנים אוטונומיים. הגישה הראשונה, <span class="claim-pick" onclick="selClaim(this)">ארכיטקטורת ReAct משלבת שרשרת-חשיבה עם פעולות חיצוניות ומשפרת דיוק משימות ב-34%</span> <cite onclick="toast('Yao et al., 2023 — צוטט [12]')">[12]</cite>. גישה זו הפכה לבסיס נפוץ במסגרות מודרניות.</p>
+            <p>הגישה השנייה מבוססת על תכנון היררכי (hierarchical planning), שבה סוכן-על מפרק משימות לתתי-משימות המבוצעות על ידי סוכני-משנה <cite onclick="toast('Wang et al., 2024 — צוטט [18]')">[18]</cite>. <span class="claim-pick" onclick="selClaim(this)">מערכות רב-סוכן מציגות יתרון עקבי במשימות מורכבות ארוכות-טווח</span> <cite onclick="toast('Park et al., 2024 — צוטט [23]')">[23]</cite>.</p>
+            <div class="callout">📊 <b>נקודת מפתח:</b> טבלת ההשוואה בין הארכיטקטורות (איור 2.1) מציגה את ההבדל בעלות החישוב מול הדיוק.</div>
+            <p>לבסוף, ארכיטקטורות מבוססות-רפלקציה מוסיפות לולאת ביקורת עצמית המאפשרת לסוכן לתקן את עצמו <cite onclick="toast('Shinn et al., 2023 — צוטט [27]')">[27]</cite>.</p>
+          </div>
+
+          <div class="instr-box">
+            <label style="font-weight:700;font-size:13.5px;color:var(--navy-900);display:block;margin-bottom:7px">📌 הוראות לפרק <span class="hint">הכלי ישבץ את התוצר במיקום שתבחר</span></label>
+            <textarea class="input" id="instrTxt" placeholder="לדוגמה: הוסף כאן טבלת השוואה בין שלוש הארכיטקטורות / הוסף callout על מגבלות…"></textarea>
+            <button class="btn sm" style="margin-top:8px" onclick="insertPin()">📌 שבץ הוראה בטיוטה</button>
+          </div>
+
+          <div class="actions-bar">
+            <button class="btn" onclick="toast('נשלח לכתיבה חוזרת עם ההוראות')">↻ שלח לכתיבה חוזרת</button>
+            <button class="btn cta" data-go="export">אשר טיוטה והפק פלטים ←</button>
+          </div>
+        </div>
+
+        <!-- side panel -->
+        <aside class="card panel" style="padding:16px">
+          <div class="side-tabs">
+            <div class="st on" onclick="sideTab(this,'issues')">הערות מבקר</div>
+            <div class="st" onclick="sideTab(this,'stats')">סטטיסטיקה</div>
+          </div>
+          <div id="tab-issues">
+            <div class="issue err"><span class="ic">🔴</span><div><b>טענה לא מבוססת</b><br>"שיפור של 34%" — הציטוט [12] לא תומך במספר המדויק. שקול ניסוח זהיר יותר.</div></div>
+            <div class="issue warn"><span class="ic">🟠</span><div><b>ציטוט בודד</b><br>הטענה על מערכות רב-סוכן נשענת על מקור יחיד [23]. הוסף מקור תומך.</div></div>
+            <div class="issue warn"><span class="ic">🟠</span><div><b>איזון</b><br>הפרק מציג יתרונות בלבד; חסר דיון בחסרונות התכנון ההיררכי.</div></div>
+          </div>
+          <div id="tab-stats" style="display:none">
+            <div class="stat-mini">
+              <div class="sm"><div class="n">4</div><div class="l">פסקאות</div></div>
+              <div class="sm"><div class="n">4</div><div class="l">ציטוטים</div></div>
+              <div class="sm"><div class="n">1</div><div class="l">Callouts</div></div>
+              <div class="sm"><div class="n">1</div><div class="l">טבלאות</div></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- =================================================================
+         SCREEN 7 — PREVIEW & EXPORT
+         ================================================================= -->
+    <section class="screen" id="export">
+      <div id="flow-export"></div>
+      <div class="page-head">
+        <div><h1>תצוגה מקדימה וייצוא</h1><p>סוכנים 7–11 · הסקר הסופי בסגנון תקן הזהב, מוכן להורדה.</p></div>
+      </div>
+
+      <div class="exp-grid">
+        <!-- preview -->
+        <div class="preview">
+          <div class="pv-cover">
+            <div class="k">סקר ספרות · 2026</div>
+            <h1>סוכני AI אוטונומיים בארגונים</h1>
+            <div class="sub">סקירה שיטתית · 47 מקורות · 11 פרקים</div>
+          </div>
+          <div class="pv-body">
+            <div class="kpi-grid">
+              <div class="kpi"><div class="num">47</div><div class="desc">מקורות שנותחו</div></div>
+              <div class="kpi"><div class="num">68%</div><div class="desc">מקורות 2023+</div></div>
+              <div class="kpi"><div class="num">3</div><div class="desc">משפחות ארכיטקטורה</div></div>
+              <div class="kpi"><div class="num">HIGH</div><div class="desc">אמון כולל</div></div>
+            </div>
+            <div class="conc-box">
+              <h3>מסקנות מרכזיות</h3>
+              <ul>
+                <li>ארכיטקטורות מבוססות-רפלקציה מובילות באמינות אך יקרות חישובית.</li>
+                <li>פער מרכזי: היעדר benchmarks אחידים להערכת סוכנים ארוכי-טווח.</li>
+                <li>אתגרי הבקרה והאתיקה נותרו הפתוחים ביותר למחקר עתידי.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- export cards -->
+        <aside>
+          <div class="section-title">📦 פורמטי ייצוא</div>
+          <div class="exp-card">
+            <div class="ei" style="background:#e65100">⬡</div>
+            <div class="en"><b>HTML</b><span>תקן הזהב · אינטראקטיבי</span></div>
+            <span class="exp-status ready">מוכן ✓</span>
+          </div>
+          <div class="exp-card">
+            <div class="ei" style="background:#c62828">PDF</div>
+            <div class="en"><b>PDF</b><span>להדפסה ולהפצה</span></div>
+            <span class="exp-status ready">מוכן ✓</span>
+          </div>
+          <div class="exp-card">
+            <div class="ei" style="background:#1565c0">W</div>
+            <div class="en"><b>DOCX</b><span>Word · RTL לעריכה</span></div>
+            <span class="exp-status gen" onclick="genExport(this)">מפיק…</span>
+          </div>
+          <div class="exp-card">
+            <div class="ei" style="background:#e8710a">▦</div>
+            <div class="en"><b>מצגת</b><span>תקציר מנהלים</span></div>
+            <span class="exp-status idle" onclick="genExport(this)">הפק ←</span>
+          </div>
+          <div class="exp-card">
+            <div class="ei" style="background:#7b1fa2">🎧</div>
+            <div class="en"><b>NotebookLM</b><span>טקסט + הוראות העלאה</span></div>
+            <span class="exp-status idle" onclick="genExport(this)">הפק ←</span>
+          </div>
+          <button class="btn cta lg" style="width:100%;margin-top:14px" onclick="toast('הורדת כל הפלטים המוכנים')">⤓ הורד הכל</button>
+          <button class="btn" style="width:100%;margin-top:10px" data-go="dashboard">← חזרה לדשבורד</button>
+        </aside>
+      </div>
+    </section>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<div class="toast" id="toast"><span>✓</span><span id="toastMsg"></span></div>
+
+<script>
+/* ===================================================================
+   Navigation
+   =================================================================== */
+const CRUMBS={
+  dashboard:['דשבורד','— כל הסקרים'],
+  brief:['הגדרת סקר','— סוכן 1'],
+  toc:['תוכן עניינים','— סוכן 2 · נקודת אישור'],
+  sources:['מקורות','— סוכנים 3–4 · נקודת אישור'],
+  pipeline:['ריצת המערכת','— סוכנים 5–11'],
+  draft:['עריכת טיוטה','— סוכנים 5–6 · נקודת אישור'],
+  export:['ייצוא','— סוכנים 7–11'],
+};
+const FLOW=[
+  {id:'brief',n:'הגדרה'},{id:'toc',n:'תוכן עניינים',gate:1},
+  {id:'sources',n:'מקורות',gate:1},{id:'pipeline',n:'ריצה'},
+  {id:'draft',n:'טיוטה',gate:1},{id:'export',n:'ייצוא'},
+];
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+  document.querySelectorAll('.rail .nav-ico').forEach(b=>b.classList.toggle('active',b.dataset.go===id));
+  const c=CRUMBS[id]||[id,''];
+  document.getElementById('crumb').innerHTML=c[0]+' <small>'+c[1]+'</small>';
+  renderFlow(id);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-go]');
+  if(t){go(t.dataset.go);}
+});
+function renderFlow(active){
+  const idx=FLOW.findIndex(f=>f.id===active);
+  if(idx<0)return;
+  let html='<div class="flow">';
+  FLOW.forEach((f,i)=>{
+    const cls=i<idx?'done':(i===idx?'active':'');
+    html+=`<div class="step ${cls}" onclick="go('${f.id}')">
+      <div class="dot">${i<idx?'✓':i+1}</div>
+      <div class="lbl">${f.n}${f.gate?' <span class="gate">אישור</span>':''}</div></div>`;
+    if(i<FLOW.length-1)html+='<div class="arrow"></div>';
+  });
+  html+='</div>';
+  const host=document.getElementById('flow-'+active);
+  if(host)host.innerHTML=html;
+}
+
+/* ===================================================================
+   Toast
+   =================================================================== */
+let toastT;
+function toast(msg){
+  const el=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  el.classList.add('show');clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+/* ===================================================================
+   Dashboard
+   =================================================================== */
+function delCard(e){
+  e.stopPropagation();
+  if(confirm('להסיר את הסקר מהדשבורד?')){e.target.closest('.s-card').remove();toast('הסקר הוסר');}
+}
+
+/* ===================================================================
+   Brief
+   =================================================================== */
+function addGoal(){
+  const d=document.createElement('div');
+  d.className='goal-row';
+  d.innerHTML='<input class="input" placeholder="מטרה חדשה…"><button class="rm" onclick="this.parentElement.remove()">✕</button>';
+  document.getElementById('goals').appendChild(d);
+  d.querySelector('input').focus();
+}
+function togChip(el){
+  el.classList.toggle('on');el.classList.toggle('off');
+}
+function pickScope(el){
+  document.querySelectorAll('.scope-opt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+}
+
+/* ===================================================================
+   TOC
+   =================================================================== */
+const TOC_DATA=[
+  {c:'מבוא ורקע',s:['הגדרת התחום','מוטיבציה ומגמות']},
+  {c:'ארכיטקטורות סוכן',s:['ReAct ושרשרת-חשיבה','תכנון היררכי','רפלקציה וביקורת עצמית']},
+  {c:'מסגרות אורקסטרציה',s:['LangGraph','AutoGen','CrewAI','השוואה']},
+  {c:'זיכרון וכלים חיצוניים',s:['זיכרון לטווח ארוך','קריאה לכלים (tool use)']},
+  {c:'אמינות ובקרה',s:['Guardrails','Human-in-the-loop']},
+  {c:'הערכת ביצועים',s:['Benchmarks','מטריקות הצלחה']},
+  {c:'יישומים בתעשייה',s:['שירות לקוחות','פיתוח תוכנה','מחקר']},
+  {c:'אתגרים ופערים',s:['עלות חישוב','אמינות ארוכת-טווח']},
+  {c:'מסקנות וכיווני המשך',s:['סיכום','מחקר עתידי']},
+];
+function renderTOC(){
+  const host=document.getElementById('chapters');host.innerHTML='';
+  TOC_DATA.forEach((ch,i)=>{
+    const div=document.createElement('div');
+    div.className='chapter';div.draggable=true;
+    div.innerHTML=`
+      <div class="ch-head">
+        <span class="grip">⠿</span>
+        <span class="cidx">${i+1}</span>
+        <input class="ctitle" value="${ch.c}">
+        <div class="ch-actions">
+          <button class="icon-btn" title="הוסף תת-סעיף" onclick="addSec(this)">＋</button>
+          <button class="icon-btn" title="מחק פרק" onclick="delChapter(this)">🗑</button>
+        </div>
+      </div>
+      <div class="ch-secs">
+        ${ch.s.map(s=>`<div class="sec-item"><span class="sb">›</span><span>${s}</span></div>`).join('')}
+        <button class="sec-add" onclick="addSecRow(this)">+ תת-סעיף</button>
+      </div>`;
+    host.appendChild(div);
+  });
+  enableDrag();updateMeter();
+}
+function updateMeter(){
+  const n=document.querySelectorAll('#chapters .chapter').length;
+  const m=document.getElementById('chMeter');
+  document.querySelectorAll('#chapters .cidx').forEach((c,i)=>c.textContent=i+1);
+  if(n>=8){m.className='toc-meter ok';m.innerHTML=`✓ ${n} פרקים — עומד בדרישת התקן (≥8)`;}
+  else{m.className='toc-meter warn';m.innerHTML=`⚠ ${n} פרקים — נדרשים לפחות 8`;}
+}
+function addChapter(){
+  TOC_DATA.push({c:'פרק חדש',s:[]});renderTOC();
+  const last=document.querySelector('#chapters .chapter:last-child .ctitle');last.focus();last.select();
+}
+function delChapter(b){b.closest('.chapter').remove();updateMeter();}
+function addSecRow(b){
+  const d=document.createElement('div');d.className='sec-item';
+  d.innerHTML='<span class="sb">›</span><input class="input" placeholder="תת-סעיף חדש…">';
+  b.parentElement.insertBefore(d,b);d.querySelector('input').focus();
+}
+function addSec(b){
+  const secs=b.closest('.chapter').querySelector('.ch-secs');
+  addSecRow(secs.querySelector('.sec-add'));
+}
+function acceptSug(b){b.closest('.sug').remove();addChapter();toast('ההצעה נוספה לתוכן העניינים');}
+function enableDrag(){
+  let dragEl=null;
+  document.querySelectorAll('#chapters .chapter').forEach(ch=>{
+    ch.addEventListener('dragstart',()=>{dragEl=ch;ch.style.opacity='.4';});
+    ch.addEventListener('dragend',()=>{ch.style.opacity='1';updateMeter();});
+    ch.addEventListener('dragover',e=>{
+      e.preventDefault();
+      const host=document.getElementById('chapters');
+      const after=[...host.querySelectorAll('.chapter:not([style*="0.4"])')].find(el=>{
+        const r=el.getBoundingClientRect();return e.clientY<r.top+r.height/2;
+      });
+      if(after)host.insertBefore(dragEl,after);else host.appendChild(dragEl);
+    });
+  });
+}
+
+/* ===================================================================
+   Sources
+   =================================================================== */
+const SOURCES=[
+  {sel:1,t:'ReAct: Synergizing Reasoning and Acting in Language Models',a:'Yao, S. et al.',y:2023,l:'EN',c:1842,conf:'high',doi:'10.48550/arXiv.2210.03629',src:'arXiv'},
+  {sel:1,t:'Generative Agents: Interactive Simulacra of Human Behavior',a:'Park, J. S. et al.',y:2023,l:'EN',c:1203,conf:'high',doi:'10.1145/3586183.3606763',src:'ACM'},
+  {sel:1,t:'AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation',a:'Wu, Q. et al.',y:2024,l:'EN',c:512,conf:'high',doi:'10.48550/arXiv.2308.08155',src:'OpenAlex'},
+  {sel:1,t:'Reflexion: Language Agents with Verbal Reinforcement Learning',a:'Shinn, N. et al.',y:2023,l:'EN',c:734,conf:'mod',doi:'10.48550/arXiv.2303.11366',src:'arXiv'},
+  {sel:1,t:'A Survey on Large Language Model based Autonomous Agents',a:'Wang, L. et al.',y:2024,l:'EN',c:921,conf:'high',doi:'10.1007/s11704-024-40231-1',src:'Crossref'},
+  {sel:1,t:'מערכות סוכנים אוטונומיים: סקירה והשלכות יישומיות',a:'כהן, ד. ולוי, ר.',y:2024,l:'HE',c:14,conf:'lim',doi:'10.1234/heb.2024.07',src:'OpenAlex'},
+  {sel:1,t:'Tool Learning with Large Language Models: A Survey',a:'Qin, Y. et al.',y:2024,l:'EN',c:287,conf:'mod',doi:'10.48550/arXiv.2405.17935',src:'arXiv'},
+  {sel:0,t:'Emergent Multi-Agent Coordination in Open-Ended Tasks',a:'Müller, K. et al.',y:2025,l:'DE',c:8,conf:'emg',doi:'',src:'web',unver:1},
+  {sel:1,t:'CrewAI: Role-Based Orchestration for Collaborative Agents',a:'Moura, J.',y:2025,l:'EN',c:43,conf:'lim',doi:'10.48550/arXiv.2502.01234',src:'arXiv'},
+  {sel:0,t:'Self-Healing Agent Pipelines (preprint, unindexed)',a:'Anon.',y:2025,l:'EN',c:0,conf:'emg',doi:'',src:'web',unver:1},
+];
+const CONF_LABEL={high:'HIGH',mod:'MODERATE',lim:'LIMITED',emg:'EMERGING'};
+function renderSources(){
+  const tb=document.getElementById('srcBody');tb.innerHTML='';
+  SOURCES.forEach((p,i)=>{
+    const tr=document.createElement('tr');if(p.unver)tr.className='unver';
+    tr.innerHTML=`
+      <td><input type="checkbox" class="rowcb" ${p.sel?'checked':''} ${p.unver?'disabled':''} onclick="toggleSel(${i},this)"></td>
+      <td class="ttl">${p.t}</td>
+      <td class="auth">${p.a}</td>
+      <td>${p.y}</td>
+      <td><span class="lang-pill">${p.l}</span></td>
+      <td>${p.c.toLocaleString()}</td>
+      <td><span class="badge ${p.conf}">${CONF_LABEL[p.conf]}</span></td>
+      <td>${p.doi?`<a class="doi-link" href="https://doi.org/${p.doi}" target="_blank">${p.doi.length>20?p.doi.slice(0,20)+'…':p.doi}</a>`:'<span class="warn-doi">⚠ DOI לא נמצא</span>'}</td>
+      <td style="color:var(--muted);font-size:12px">${p.src}</td>`;
+    tb.appendChild(tr);
+  });
+  updateSelCount();
+}
+function toggleSel(i,cb){SOURCES[i].sel=cb.checked?1:0;updateSelCount();}
+function selectAll(cb){
+  SOURCES.forEach((p,i)=>{if(!p.unver)p.sel=cb.checked?1:0;});
+  renderSources();document.getElementById('selAll').checked=cb.checked;
+}
+function updateSelCount(){
+  const n=SOURCES.filter(p=>p.sel).length;
+  document.getElementById('selCount').textContent=n;
+  document.getElementById('selCount2').textContent=n;
+  document.getElementById('selTotal').textContent=SOURCES.length;
+}
+
+/* ===================================================================
+   Pipeline run (simulated)
+   =================================================================== */
+const AGENTS=[
+  {n:'Research Planner',d:'מתכנן המחקר · Brief',t:'4ש׳'},
+  {n:'TOC Architect',d:'אדריכל תוכן העניינים',t:'7ש׳'},
+  {n:'Source Hunter',d:'צייד מקורות · 38 מאמרים',t:'2:14'},
+  {n:'Reliability Auditor',d:'מבקר אמינות · DOI + retraction',t:'48ש׳'},
+  {n:'Writer',d:'כתיבת הפרקים',t:'—'},
+  {n:'Critical Reviewer',d:'ביקורת ואיתור issues',t:'—'},
+  {n:'Claim Grounder',d:'אימות טענות מול מקורות',t:'—'},
+  {n:'Hebrew Editor',d:'עריכה לשונית RTL',t:'—'},
+  {n:'Visualizer',d:'תרשימי SVG ו-KPI',t:'—'},
+  {n:'Executive Translator',d:'תקציר מנהלים',t:'—'},
+  {n:'HTML Generator',d:'הרכבת הפלט הסופי',t:'—'},
+];
+function renderStepper(running){
+  const host=document.getElementById('stepper');host.innerHTML='';
+  AGENTS.forEach((a,i)=>{
+    let cls='wait',ico=i+1;
+    if(i<4){cls='done';ico='✓';}
+    const div=document.createElement('div');div.className='agent '+cls;div.dataset.i=i;
+    div.innerHTML=`<div class="ai">${ico}</div>
+      <div class="meta-a"><div class="an">${a.n}</div><div class="ad">${a.d}</div></div>
+      <div class="at">${a.t}</div>`;
+    host.appendChild(div);
+  });
+}
+let runOn=false,runTimer=null,curAgent=4,chap=0;
+function toggleRun(){
+  runOn=!runOn;
+  document.getElementById('runToggle').innerHTML=runOn?'⏸ עצור ריצה':'▶ הפעל ריצה';
+  if(runOn){startRun();}else{clearInterval(runTimer);logLine('warn','run paused by operator');}
+}
+function startRun(){
+  if(curAgent>=AGENTS.length){curAgent=4;chap=0;renderStepper();}
+  markRunning(curAgent);
+  logLine('info','starting agent: '+AGENTS[curAgent].n);
+  runTimer=setInterval(tick,1400);
+}
+let tickN=0;
+const LOGS=[
+  ['ok','writer: chapter drafted (1,240 tokens)'],
+  ['info','writer: citing [12],[18],[23] — grounded'],
+  ['warn','reviewer: weak claim flagged in §2.1'],
+  ['ok','claim_grounder: 18/19 claims supported'],
+  ['info','hebrew_editor: RTL punctuation normalized'],
+  ['ok','visualizer: SVG figure 2.1 generated'],
+  ['info','executive_translator: KPI grid built'],
+  ['ok','html_generator: assembling final document'],
+];
+function tick(){
+  tickN++;
+  const L=LOGS[tickN%LOGS.length];logLine(L[0],L[1]);
+  if(tickN%2===0){
+    chap=Math.min(chap+1,11);
+    document.getElementById('chapCount').textContent='פרק '+chap+'/11';
+    const pct=Math.round(36+chap/11*64);
+    document.getElementById('overallBar').style.width=pct+'%';
+    document.getElementById('pctLabel').textContent=pct+'%';
+  }
+  if(tickN%3===0&&curAgent<AGENTS.length-1){
+    markDone(curAgent);curAgent++;markRunning(curAgent);
+    logLine('info','→ agent: '+AGENTS[curAgent].n);
+  }
+  if(curAgent>=AGENTS.length-1&&chap>=11){
+    markDone(curAgent);clearInterval(runTimer);runOn=false;
+    document.getElementById('runToggle').innerHTML='✓ הריצה הושלמה';
+    logLine('ok','pipeline complete — draft ready for review');
+    setTimeout(()=>toast('הריצה הושלמה — מעבר לעריכת טיוטה'),600);
+  }
+}
+function markRunning(i){
+  const el=document.querySelector(`.agent[data-i="${i}"]`);if(!el)return;
+  el.className='agent run';el.querySelector('.ai').innerHTML='<span class="spin"></span>';
+  el.querySelector('.at').textContent='רץ…';
+}
+function markDone(i){
+  const el=document.querySelector(`.agent[data-i="${i}"]`);if(!el)return;
+  el.className='agent done';el.querySelector('.ai').textContent='✓';
+  el.querySelector('.at').textContent=(10+i*3)+'ש׳';
+}
+function logLine(cls,msg){
+  const box=document.getElementById('logBox');
+  const mm=String(Math.floor(tickN*2/60)).padStart(2,'0'),ss=String((tickN*2)%60).padStart(2,'0');
+  box.innerHTML+=`<span class="t">[${mm}:${ss}]</span> <span class="${cls}">${msg}</span><br>`;
+  box.scrollTop=box.scrollHeight;
+}
+
+/* ===================================================================
+   Draft & review
+   =================================================================== */
+function pickConf(el){
+  el.parentElement.querySelectorAll('.cp').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  if(el.parentElement.dataset.scope==='claim')toast('רמת האמינות של הטענה עודכנה ל-'+el.textContent);
+}
+let curClaim=null;
+function selClaim(el){
+  document.querySelectorAll('.claim-pick').forEach(c=>c.classList.remove('claim-sel'));
+  el.classList.add('claim-sel');curClaim=el;
+  // floating per-claim confidence picker
+  let pop=document.getElementById('claimPop');
+  if(!pop){pop=document.createElement('div');pop.id='claimPop';pop.style.cssText='position:absolute;z-index:60;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);padding:10px 12px';
+    pop.innerHTML='<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:7px">אמינות הטענה הבודדת:</div><div class="conf-pick" data-scope="claim"><span class="cp high" onclick="pickConf(this)">HIGH</span><span class="cp mod on" onclick="pickConf(this)">MODERATE</span><span class="cp lim" onclick="pickConf(this)">LIMITED</span><span class="cp emg" onclick="pickConf(this)">EMERGING</span></div>';
+    document.body.appendChild(pop);}
+  const r=el.getBoundingClientRect();
+  pop.style.display='block';
+  pop.style.top=(window.scrollY+r.bottom+6)+'px';
+  pop.style.left=(r.left)+'px';
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.claim-pick')&&!e.target.closest('#claimPop')){
+    const p=document.getElementById('claimPop');if(p)p.style.display='none';
+  }
+});
+function insertPin(){
+  const txt=document.getElementById('instrTxt').value.trim();
+  if(!txt){toast('כתוב הוראה תחילה');return;}
+  const ed=document.querySelector('#draft [contenteditable]');
+  const pin=document.createElement('div');pin.className='pin';
+  pin.innerHTML='📌 <span><b>הוראה לכלי:</b> '+txt+'</span>';
+  ed.appendChild(pin);
+  document.getElementById('instrTxt').value='';
+  toast('ההוראה שובצה בטיוטה במיקום שנבחר');
+}
+function sideTab(el,which){
+  el.parentElement.querySelectorAll('.st').forEach(s=>s.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('tab-issues').style.display=which==='issues'?'block':'none';
+  document.getElementById('tab-stats').style.display=which==='stats'?'block':'none';
+}
+document.querySelectorAll('#draft .chap-nav .cn').forEach(cn=>{
+  cn.onclick=()=>{document.querySelectorAll('#draft .cn').forEach(c=>c.classList.remove('on'));cn.classList.add('on');};
+});
+
+/* ===================================================================
+   Export
+   =================================================================== */
+function genExport(el){
+  if(el.classList.contains('ready'))return;
+  el.className='exp-status gen';el.textContent='מפיק…';
+  setTimeout(()=>{el.className='exp-status ready';el.textContent='מוכן ✓';toast('הפלט הופק בהצלחה');},1500);
+}
+
+/* ===================================================================
+   Init
+   =================================================================== */
+renderTOC();renderSources();renderStepper();
+</script>
+</body>
+</html>

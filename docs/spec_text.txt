@@ -1,0 +1,2207 @@
+
+===== PAGE 1 =====
+מערכת סקרי הספרות — אפיון מלא
+ המסמך בנוי בשתי:למי זה . ~/.claude/literature-survey-system - תיעוד מלא של הכלי שנמצא ב:מה זה
+ נכתב מקריאת:מקור .חלק ב׳ ואילך נכנס לפרטים הטכניים המלאים ,חלק א׳ מוסבר בשפה פשוטה לכל אחד — שכבות
+. שורות7,200~ , מחברי מאגר20 , מודולי ליבה13 , סוכנים17 — הקוד עצמו
+תוכן עניינים
+המסע .5 מה יוצא בסוף .4 מילון מונחים .3 הבעיה שהוא פותר .2 מה הכלי עושה, בפשטות .1 חלק א׳ — הסבר לכל אחד
+ תחנות בשפה פשוטה17 — של הסקר
+מודל הנתונים .8 גשר הקבצים — הלב של המערכת .7 ארכיטקטורה כללית .6 חלק ב׳ — איך זה עובד מבפנים
+המאגרים ושכבת הרשת .11 מודולי הליבה .10  הסוכנים — אפיון מלא17 .9 חלק ג׳ — כל סוכן בנפרד
+מלכודות .16 הפעלה מעשית .15 כל דגלי הסביבה .14 הסמנים .13  שכבות20 — מנגנוני האמינות .12 חלק ד׳ — עזר
+מפת קבצים ובדיקות .17 ומגבלות ידועות
+web-העמקת מחקר ה .19 לשוני — הדגשה והעמקה-חיפוש רב .18 חלק ה׳ — אפיון הרחבות: הדרישות והתכנון המלא
+מומחים-בהירות: משוואות, עברית ונגישות ללא .22 הרחבת בדיקות האמינות .Source Scout 21 — גילוי מאגרים דינמי .20
+סדר מימוש מומלץ .24 עומק פרקטי — עד רמת המשוואות והיישום .23
+---
+חלק א׳ — הסבר לכל אחד
+. מה הכלי עושה, בפשטות1
+
+===== PAGE 2 =====
+60- — מסמך סקר ספרות אקדמי מלא בעברית "), והוא מחזיר לך1 נושא (למשל: "אימונותרפיה לסוכרת סוג אתה נותן לו
+. עמודים, עם פרקים, גרפים, ביבליוגרפיה ממוספרת, ותקציר מנהלים100
+: לכתוב לך סקר". ההבדל הוא הכולAI אבל זה לא "בקש ממודל
+ רגיל כותב סקר מהזיכרון שלו. הוא ימציא מקורות שנשמעים אמיתיים אבל לא קיימים, ימציא מספריםAI מודל
+.שנשמעים סבירים, ולא תהיה לך שום דרך לדעת מה נכון
+ מאגרים אקדמיים (אותם מאגרים שחוקרים משתמשים14-הולך ומביא מקורות אמיתיים מ הכלי הזה קודם כל
+אחר כך נותן למודל לכתוב — ומיד בודק בהם), בודק שכל מקור באמת קיים, בודק שהוא לא נמשך מהספרות, ורק
+.כל משפט שהוא כתב מול המקור שהוא ציטט
+האנלוגיה
+: אנשים שעובד לפי סדר17 תחשוב על צוות מחקר בן
+התפקיד בצוות
+מה הוא עושה
+הספרן 🔍 ספריות שונות ומביא כל מה שרלוונטי14-הולך ל
+המבקר 🔬בודק שכל ספר באמת קיים בקטלוג, ושאף אחד לא נמשך מהמדף
+חוקר השטח 🌐עכשיו בתעשייה, ברגולציה, אצל היצרנים יוצא לשוק — מה קורה
+הכותב ✍️כותב את הפרקים — אבל רק על סמך מה שהספרן הביא
+הבודק 🧷
+"?משפט: "הטענה הזו באמת מופיעה במקור שציטטת-עובר משפט
+העורך הביקורתי 🧐
+""יש לך פה מספר בלי מקור. יש לך פה קפיצה לוגית
+עורך הלשון 🇮🇱אסור לו לגעת בעובדות — משפר את העברית
+המספרן 🔖מסדר את כל הציטוטים למספור אחיד ומוחק ציטוטים שבורים
+הגרפיקאי 📊רק מנתונים אמיתיים — בונה גרפים
+המעריך 🏁 לסקר לפני שהוא יוצא0-100 נותן ציון
+:העיקרון המרכזי של כל המערכת
+
+===== PAGE 3 =====
+.מהמאגרים. המערכת אוכפת את החיבור ביניהם טקסט. העובדות מגיעות המודל כותב
+ המערכת לא מחפשת רק באנגלית — היא מקבלת רשימת.לשוני-ועוד נקודה שחשוב להכיר מההתחלה: החיפוש הוא רב
+שפות מהמשתמש, מתרגמת את מונח החיפוש לכל שפה (תוך שמירה על המונחים הטכניים המקובלים בה), מריצה את
+— בכנות באילו שפות באמת נמצאו מקורות שצוטטו השאילתות המתורגמות בעדיפות מובטחת, ומדווחת בשער המסמך
+).18 ; תוכנית ההעמקה: סעיף3  שלב9 לא באילו שפות "התבקש לחפש". (פירוט: סעיף
+. הבעיה שהוא פותר2
+AI הבעיה הקלאסית עם
+איך הכלי מטפל בה
+המצאת מקורות — ציטוט למאמר שלא
+קיים
+Crossref  נבדק מולDOI- אמיתי. הAPI-כל מקור מגיע מ
+"73% המצאת מספרים — "שיפור של
+מהאוויר
+הגרפים נבנים בקוד מנתונים אמיתיים. מספר בטקסט בלי ציטוט מסומן כבעיה
+טענה שלא נמצאת במקור/ ודאית- בודק כל טענה מול המקור שצוטט ומסווג: נתמכת / לאClaim Grounder
+נתמכת-לא
+)retracted( מאמר שנמשך מהספרות
+ מקורות, מסומן, ולא משמש כמקור רגיל4 נבדק מול
+] שלא מפנה לשום דבר5[ ציטוט
+ מוחק אותו ומדווחCitation Manager
+מקורות בביבליוגרפיה שלא צוטטו
+מושמטים אוטומטית — הביבליוגרפיה = רק מה שבאמת שימש
+""אין לי מושג איך זה נבנהweb  יומן חיפושי+ PRISMA  תרשים+  מלאAudit Log
+. מילון מונחים3
+
+===== PAGE 4 =====
+:לפני שנצלול — כמה מונחים שחוזרים לאורך המסמך
+מונח
+מה זה
+)Agent( סוכן
+ אחתPython מודול שעושה עבודה אחת. פה כל סוכן הוא בסך הכול פונקציית
+)Pipeline( צינור17  סוכן→ ... → 2  סוכן→ 1 סדר הריצה: סוכן
+State"התיקייה המשותפת" — אובייקט אחד שכל הסוכנים כותבים אליו וקוראים ממנו
+DOI
+10.1038/nature12373 .תעודת הזהות הדיגיטלית של מאמר
+PRISMAלאומי לדיווח שקוף על סקרי ספרות: כמה מקורות זוהו, כמה סוננו, כמה נכללו-תקן בין
+Retracted
+)'מאמר שנמשך רשמית מהספרות (בגלל טעות, זיוף, וכו
+) (עיגוןGrounding
+"?הבדיקה: "האם הטענה הזו באמת נתמכת במקור שצוטט
+Snowballing"כדור שלג" — מוצאים מאמר טוב, ואז מביאים גם את מה שהוא מצטט ואת מי שמצטט אותו
+Dedupהסרת כפילויות — אותו מאמר שהופיע בשלושה מאגרים שונים
+Tier ראשוני/אפורT3 , בינוניT2 , סמכותיT1 :דירוג אמינות של מקור
+Preprint). רעיון, לא ידע מבוססarXiv, bioRxiv( לפני ביקורת עמיתים מאמר שפורסם
+[n] בביבליוגרפיה7  = מקור מספר[7] :ציטוט אקדמי בטקסט
+[W#] פתוח (לא אקדמי). מסומן אחרת בכוונהweb ציטוט למקור
+)Marker( סמן[TABLE] , [FORMULA] , [CALLOUT:red] :תג בטקסט שהופך לעיצוב
+Scorecard שהמערכת נותנת לסקר שהיא עצמה כתבה0-100 ציון איכות
+ / גשרnative
+)7  (ראה סעיףAPI האופן שבו המערכת "מדברת" עם המודל בלי מפתח
+. מה יוצא בסוף4
+
+===== PAGE 5 =====
+: outputs/ הכול נשמר בתיקיית
+קובץ
+מה יש בו
+survey_<תאריך<_>נושא>.html
+DOI ), גרפים, קישוריMathJax(  מלא, נוסחאות מעוצבותRTL .המסמך הראשי
+A4- לprint-CSS ,לחיצים
+survey_<תאריך<_>נושא>.docx
+Unicode- אמיתי, טבלאות אמיתיות, נוסחאות בWord — RTL גרסת
+slides_<תאריך<_>נושא>.md
+) אמינות לכל פרקbadge , עםRTL( Marp מצגת
+notebooklm_<נושא>.txt
+) (ליצירת פודקאסטNotebookLM-טקסט נקי להעלאה ל
+.llm_bridge*/stage_log.jsonלוג טכני של כל שלב — נכתב בזמן אמת, שורד קריסה
+HTML-מבנה מסמך ה
+┌─ שער עמוד ─────────────────────────────────────┐
+│  שפות / מצוטטים מקורות :מדדים 6 + כותרת /      │
+│  תאריך / שנים טווח / גרפים / פרקים              │
+├─ אמינות הערת ───────────────────────────────────┤
+│  "בסיוע נכתב AI. אומתו לא ]22[,]14[ המאמרים.   │
+│   שנמשכו מאמרים 2 זוהו."                        │
+├─ מנהלים תקציר ──────────────────────────────────┤
+│  4-6 קופסאות KPI · 5-7 חישוב · מסקנות ROI      │
+├─ Scorecard ─────────────────────────────────────┤
+│  התקדמות פסי עם מדדים 9 + 0-100 ציון           │
+├─ )לחיץ ,עמודי-דו( עניינים תוכן ─────────────────┤
+├─ הפרקים ────────────────────────────────────────┤
+│  פרק כל: badge גרפים ,אמינות, callouts,        │
+│  לחיצים ציטוטים ,בוחן מקרי ,טבלאות ,נוסחאות    │
+├─ פתוחים מקורות — עומק מחקר ─────────────────────┤
+│  דומיין דירוג עם ממצא כל :נפרדת שכבה,          │
+│  ✓✓ סתירות + .קישור ,מילולי ציטוט ,מאושש +     │
+│  החיפושים יומן + ישויות טבלת                    │
+├─ המערכת ידי-על שנוצרו רעיונות ──────────────────┤
+│  7 מסומן פריט כל ,קטגוריות "Generated Idea"     │
+├─ איכות ובקרת שקיפות ────────────────────────────┤
+│  תרשים · טענות-עיגון פס PRISMA · Audit Log      │
+├─ ביבליוגרפיה ───────────────────────────────────┤
+│  1 ממוספרת..M, קישור :עם מקור כל DOI +          │
+
+===== PAGE 6 =====
+│  "✓ אומת" / "DOI קישור אין" / "נבדק לא"        │
+└─────────────────────────────────────────────────┘
+ תחנות בשפה פשוטה17 — . המסע של הסקר5
+#תחנה
+מה קורה שם, בפשטות
+0אישור תוכן עניינים
+לא ממשיכה עד שאתה מאשר .המערכת עוצרת ומראה לך את מבנה הסקר המוצע
+3חיפוש מקורות
+ מאגרים, בכמה שפות, מנסחת עשרות שאילתות, מסירה כפילויות, ועוצרת14-הולכת ל
+כשמפסיקה למצוא דברים חדשים
+4אימות? קיים? האם המאמר נמשך? מה רמת האמינות שלוDOI-לכל מקור: האם ה
+5טקסט מלא
+גוף המאמרים (לא רק תקציר) ממאגרים פתוחים מנסה להוריד את
+5.7 עמוקweb מחקר
+יוצא לאינטרנט הפתוח: מה קורה בשוק, ברגולציה, אצל היצרנים — בסבבים, עם אימות צולב
+6כתיבה
+כותב כל פרק, על סמך המקורות שהוקצו לו בלבד
+7עיגון טענות?משפט: הטענה הזו נתמכת במקור? חלקית? בכלל לא-עובר משפט
+8ביקורת
+מזהה: מספרים בלי מקור, פרקים קצרים מדי, חזרות בין פרקים, קפיצות לוגיות
+9לולאת תיקון
+ סבבים2 שולח את הבעיות בחזרה לכותב, הוא מתקן, ובודקים שוב. עד
+10תקציר מנהליםROI , חישוב✓ ים, מסקנות עם-KPI
+11עריכת עברית
+ואם העריכה שינתה ולו מספר אחד, היא נדחית — משפר את השפה
+12סידור ציטוטים
+ממספר מחדש הכול באופן אחיד, מוחק ציטוטים שבורים, בונה ביבליוגרפיה
+13גרפיםPRISMA כולם מנתונים אמיתיים, כולל תרשים — SVG  גרפי5
+14רעיונות
+פרק נפרד ומסומן: רעיונות למחקר/מוצר/ניסויים שנגזרים מהסקר
+15ציון
+ אזהרה גלויה במסמך→ 60-. מתחת לScorecard 0-100
+
+===== PAGE 7 =====
+#תחנה
+מה קורה שם, בפשטות
+16
+HTMLמרכיב את המסמך המלא
+17
+/  / שקפיםWord
+פודקאסט
+פלטים נוספים
+---
+חלק ב׳ — איך זה עובד מבפנים
+. ארכיטקטורה כללית6
+┌────────────────────────────────────────────────────────────────┐
+│  run_pipeline.py        כניסה נקודת — CLI קובץ או config JSON  │
+├────────────────────────────────────────────────────────────────┤
+│                        התזמור שכבת                             │
+│  core/orchestrator.py   סדרם ואת השלבים 17 את מגדיר            │
+│  core/stage_tracker.py  לדיסק לוג כותב ,פלט מאמת ,שלב כל מריץ  │
+│  core/state.py          SurveyState — ה-state היחיד המשותף     │
+│  core/llm.py            ל היחיד השער-LLM (native / mock / api)  │
+├────────────────────────────────────────────────────────────────┤
+│                        הסוכנים שכבת                            │
+│  agents/*.py            17 אחת פונקציה אחד כל — סוכנים         │
+├────────────────────────────────────────────────────────────────┤
+│                        הנתונים שכבת                            │
+│  apis/registry.py       מאגרים 14 + תחומי ניתוב               │
+│  apis/_http.py          session + retry + cache                │
+│  apis/*.py              מאגר לכל מחבר                          │
+└────────────────────────────────────────────────────────────────┘
+שש החלטות עיצוב שמסבירות הכול
+
+===== PAGE 8 =====
+החלטה
+למה
+ יחידState, קורא ממנו וכותב אליוstate אין הודעות בין סוכנים, אין תור, אין תיאום. כל סוכן מקבל
+סוכן = פונקציה
+. אין מחלקות, אין תהליכים. קל לבדוקrun_writer(brief, toc, papers) -> sections
+) משלוif __name__ == "__main__" ולהריץ בנפרד (לכל סוכן יש
+ דרך שערLLM
+אחד
+. זה מה שמאפשר להחליףllm.complete()  הכול עובר דרך. anthropic אף סוכן לא מייבא
+ בלי לגעת בסוכןbackend
+ מדורגFail-safe והצינור ממשיך⚠️  נרשם→ קריטי שנפל-. שלב לאcritical=True/False כל שלב מסומן
+שקיפות כמוצר
+. הלוג מוצג בסוף המסמך למשתמשstate.log(...) -כל סוכן קורא ל
+דטרמיניזם היכן
+שאפשר
+. פחות משטח להזיהLLM , גרפים — כולם קוד, לאdedup ,חילוץ טענות, ביקורת, דירוג דומיינים
+. גשר הקבצים — הלב של המערכת7
+.זה הרכיב שהכי חשוב להבין, וזה מה שמייחד את הכלי
+ הבעיה שהוא פותר7.1
+המשתמש . תשלום לפי טוקן+ API מערכת כזו צריכה לקרוא למודל שפה עשרות פעמים בריצה. הדרך הרגילה: מפתח
+. אישיAPI החליט: בלי מפתח
+. התקשורת ביניהם היא דרךskill- עצמו — זה שמריץ את הClaude Code המודל שמייצר את הטקסט הוא :הפתרון
+.קבצים בתיקייה
+ איך זה עובד7.2
+   Python (run_pipeline)                       Claude Code (הסוכן)
+   ─────────────────────                       ───────────────────
+   llm.complete(prompt, purpose="dr_round2")
+
+===== PAGE 9 =====
+        │
+        │  לדיסק כותב:
+        ├─►  .llm_bridge/req_012_dr-round2_8b3e1f0a92.json
+        │    {
+        │      "id": "012_dr-round2_8b3e1f0a92",
+        │      "purpose": "dr_round2",      ◄── הכול שקובע מה זה
+        │      "system": "סוכן אתה deep-research...",
+        │      "max_tokens": 3500,
+        │      "temperature": 0.3,
+        │      "prompt": "...",
+        │      "response_file": ".../resp_012_...txt"
+        │    }
+        │
+        ├─ ללולאת נכנס polling (שניות 1.5 כל) ──►  את קורא req_*.json
+        │                                            מזהה purpose="dr_round2"
+        │                                            ► מריץ WebSearch אמיתי
+        │                                            ► מריץ WebFetch דפים על
+        │                                            ► תשובת מנסח JSON
+        │                                     ◄────  כותב resp_012_....txt
+        │                                     ◄────  יוצר resp_012_....done
+        │
+        └─ שקובץ מזהה .done הבא לשלב ממשיך → הטקסט את קורא → נוצר
+core/llm.py:95-146 :קוד
+) למה זה מבריק (ולא סתם עקיפה7.3
+. — הוא סוכן עם כליםtext-generator לא הצד השני של הגשר הוא
+, באמת פותחWebSearch  לא שולף מהזיכרון. הוא באמת מריץClaude Code , dr_round2  הואpurpose -כשה
+- אמיתי. אותו דבר בdeep-research  למנוע5.7 , וקורא אותם. זה מה שהופך את שלבWebFetch דפים עם
+.תלוי- — הוא באמת יוצא לחפש מקור שני בלתיdr_verify
+.לא הייתה יכולה לעשות את זה בלי לבנות שכבת כלים משלה  רגילAPI מערכת עם מפתח
+ פרטי הפרוטוקול המלאים7.4
+היבט
+ערך
+קוד
+מזהה בקשה{03:מונהd}_{purpose}_{sha1(purpose+prompt)[:10]}
+_bridge_request_id
+תיקיית גשר$SURVEY_BRIDGE_DIR  או.llm_bridge/
+llm.py:37
+
+===== PAGE 10 =====
+היבט
+ערך
+קוד
+polling קצב) BRIDGE_POLL (  שניות1.5
+llm.py:44
+Timeoutש׳900 , ברירת מחדלSURVEY_BRIDGE_TIMEOUT
+llm.py:43
+"תנאי "מוכן
+ נמחקreq - קיים ו.txt או —  קיים.txt וגם  קיים.done
+llm.py:119
+תשובה ריקה)race  וממשיך להמתין (הגנה מפני.done מוחק אתllm.py:124-132
+ פנימיCacheמיד, בלי בקשה חדשה  כבר קיים — נקראresp_*.txt אםllm.py:103
+Timeout →
+fallback
+→ . אחרתAPI- נופל ל→ ? ANTHROPIC_API_KEY קיים
+LLMUnavailable
+llm.py:137-146
+: אם הצינור קרס באמצע, הרצה חוזרת עם אותו" הפנימי הוא מה שמאפשר "המשך ריצהcache-ה
+purpose +(  שלhash  תדלג על כל התשובות שכבר התקבלו — כי מזהה הבקשה הואSURVEY_BRIDGE_DIR
+.), ולכן זהה בין ריצותprompt
+Backends- שלושת ה7.5
+: SURVEY_LLM_BACKEND  בוחר לפיcore/llm.py:53-62
+Backendמתי
+מה קורה
+nativeברירת המחדלweb , עם גישה לכליAPI גשר הקבצים. ללא מפתח, ללא עלות
+mock
+offline בדיקות
+). כל הצינור רץ בלי רשת ובליllm.py:150-347 ( purpose תשובות דטרמיניסטיות לכל
+מודל — לבדיקות רגרסיה
+api
+headless /
+cron
+לא ברירת מחדל במפורש . ANTHROPIC_API_KEY  עםSDK anthropic
+auto
+—
+native → ?. איןapi → ?יש מפתח
+
+===== PAGE 11 =====
+סמנים לכל סוג בקשה — פרק-". הוא מחזיר תשובות תקינותlorem ipsum"  הוא לא מחזיר: ראוי לציוןmock backend-ה
+deep-  עם שלושת הסטטוסים, ממצאיgrounder  שלverdicts , [TABLE] - ו[FORMULA] - ו[CALLOUT] עם
+הרוויה- בכוונה — כדי לבדוק שעצירתfindings: []  הוא מחזירdr_round2 -, ובquotes-ים וURL  עםresearch
+.עובדת
+ סוגי בקשות17 — purpose - מילון ה7.6
+:. הוא קובע איזו תשובה מצופה ובאיזה פורמטClaude Code  לביןPython-חוזה הממשק בין ה  הואpurpose השדה
+purposeמי שולח
+מה מצופה בתשובה
+toc_review
+Orchestrator פרקיםJSON  אוapproved . חובה להציג למשתמש ולחכות⚠️
+domain_classification
+Source
+Hunter
+ מרשימה סגורה3  — עד{"domains":["biomed","cs_ai"]}
+query_translate
+Source
+Hunter
+{"translations":{"German":"...","Chinese":"..."}}
+query_expansion
+Source
+Hunter
+{"concept_blocks":
+{concept,synonyms,technical_terms,abbreviations}]}
+query_refine
+Source
+Hunter
+באנגלית לפערי כיסוי  — שאילתות{"queries":[...]}
+dr_plan
+Deep
+Research
+{relevance, catalog_potential, entity_type,
+subquestions[]}
+dr_round{N}
+Deep
+Research
+. אמיתייםWebSearch+WebFetch  חובה⚠️
+ound_summary, queries_run, pages_read, findings[]}
+dr_verify
+Deep
+Research
+. חובה חיפוש אמיתי⚠️
+icts:[{id,verdict,second_url,second_source,note}]}
+dr_contradictions
+Deep
+Research
+{contradictions:
+,side_a,side_a_src,side_b,side_b_src,assessment}]}
+dr_entities
+Deep
+Research
+{entity_type, columns, rows:
+[{cells,source_url,source_name}]}
+
+===== PAGE 12 =====
+purposeמי שולח
+מה מצופה בתשובה
+writer:ch{N}
+Writer כל הסמנים+ Markdown ,פרק עברי מלא
+grounder
+Claim
+Grounder
+[{index,status,reason,rewrite}]
+executive
+Exec
+Translator
+[ROI_CALC] , [CONCLUSION] , [KPI_DATA] טקסט עם
+hebrew_editor
+Hebrew
+Editor
+===END=== / ===TEXT=== טקסט ערוך בין
+evaluator
+Evaluator
+{hebrew_quality:0-10, coherence:0-10, notes}
+ideation
+Ideation
+Engine
+ מפתחות7- בJSON
+web_landscape
+)legacy( כבויdeep-research- — רק כשה{summary, findings[]}
+. מודל הנתונים8
+.dataclasses . חמישהcore/state.py -הכול ב
+ — מה מבקשיםResearchBrief 8.1
+topic: str              # ולכתיבה לכותרות נכנס — )עברית( לתצוגה נושא
+search_topic: str       # המאגרים לשאילתות נכנס — )אנגלית( לחיפוש נושא
+goals: list[str]
+audience: str
+year_from / year_to: int
+subtopics: list[str]    # נוספת לשאילתה הופך אחד כל — באנגלית
+languages: list[str]    # מחדל ברירת ["English","Hebrew"] — מתורגמות שאילתות מייצר
+user_papers: list[str]  # DOI/שייכללו לוודא רוצה שהמשתמש כותרות
+
+===== PAGE 13 =====
+user_experts: list[str]
+confidentiality: str
+ חיפוש אקדמי בעברית מחזיר כמעט כלום. לכן הנושא. היא קריטיתsearch_topic / topic ההפרדה
+.לתצוגה בעברית, אבל השאילתות למאגרים באנגלית
+) שדות20(  — מקור אקדמיPaper 8.2
+) apa , doi , citation_count , journal , authors , year , abstract , title ( דאטה רגילה-מטא
+:ועוד — השדות שמניעים את מנגנוני האמינות
+שדה
+ערכים
+מי קובע
+tier
+T3 / T2 / T1 לפי המאגרregistry.SOURCE_TIER
+confidence
+/ MODERATE / HIGH
+EMERGING / LIMITED
+confidence_scorer.score_paper
+doi_verified
+bool
+Reliability Auditor / Citation Manager
++ is_retracted
+retraction_note
+ מקור+ bool
+apis/retraction.py
+has_fulltext
+boolמשנה את טון — core/fulltext.py
+הכתיבה
+language
+) zh / de / en ( ISO קוד
+ — לספירת שפות כנה בשערOpenAlex
+found_via
+/ snowball / search
+user / semantic
+Source Hunter
+source_type
+/ journal-article
+... report / preprint
+המאגר
+pdf_url
+URL
+Unpaywall / Europe PMC
+is_open_access
+boolהמאגר
+
+===== PAGE 14 =====
+ — פרקSurveySection 8.3
+title, content, confidence
+citations: list[str]    # מחרוזות APA
+diagrams: list[str]     # SVG מוכן
+issues: list[str]       # מה-Critical Reviewer → התיקון ללולאת נכנס
+papers: list[Paper]     # ★ למיפוי הבסיס — לפרק שהוקצו המקורות [n]
+claims: list[Claim]     # ★ ה תוצאות-grounding
+,מספור מקומי לפרק . זהsec.papers[2] =  בפרק מסוים[3]  הוא הקשר הקריטי: המספרsec.papers
+.12 שהופך למספור גלובלי רק בשלב
+ — יחידת העיגוןClaim 8.4
+text: str             # עצמו המשפט
+citations: list[int]  # מספרי [n] בו שהופיעו
+status: str           # supported / uncertain / unsupported
+reason: str           # הזה הסטטוס את קיבל למה
+rewrite: str          # התוכן על אוטומטית מוחל — מרוכך ניסוח
+chapter: str
+.זו היחידה שכל מנגנון האמינות בנוי סביבה
+ — התיקייה המשותפתSurveyState 8.5
+: מבני שקיפות12 , מכילexecutive_summary / sections / papers / toc / brief מלבד
+שדה
+תוכן
+dedup_stats
+{found, removed, kept, by_doi, by_fuzzy, engine, threshold}
+source_routingאילו תחומים זוהו, אילו מאגרים הודלקו/כובו, אילו שפות חופשו
+prisma
+identified → duplicates_removed → after_dedup → screened →
+excluded → included
+svg +
+
+===== PAGE 15 =====
+שדה
+תוכן
+audit_log — יומן כל צעד{stage, message, ...} רשימת
+retracted_papersרשימת המאמרים שנמשכו
+grounding_report
+web_claims +  פירוט לכל פרק+ אחוזים
+citation_report
+, doi_mismatch , missing_fields , dead_citations , entries
+uncited_dropped
+cited_papers רק המקורות שנכנסו לביבליוגרפיה★
+scorecard אזהרה+  ציון+  משקלות+  מדדים9
+ideation קטגוריות רעיונות7
+deep_research סטטיסטיקות+  ישויות+  סתירות+  ממצאים+  סבבים+ תוכנית
+timeline_yearsשנות פרסום אמיתיות — לגרף
+Audit Log- — הפונקציה שכל סוכן קורא לה. זה מה שמייצר את בלוק הstate.log(stage, message, **data)
+.במסמך הסופי
+---
+חלק ג׳ — כל סוכן בנפרד
+ הסוכנים — אפיון מלא17 .9
+TOC Approval Bridge — 0 שלב
+
+===== PAGE 16 =====
+ כן:קריטי · core/orchestrator.py:58-114 :קובץ
+. לפני שהמערכת נוגעת ברשת ומבזבזת זמן — היא מראה לך את תוכן העניינים המוצע ומחכה שתאשר:בפשטות
+:Claude Code  מנחה אתSKILL.md -  מפורמטTOC- דרך הגשר עם הpurpose="toc_review"  שולח- :טכנית
+ תשובה-  ממשיכים→ מאושר / אושר / approved  תשובה- חובה להציג בשיחה ולחכות לתשובת המשתמש
+TOC- ממשיכים עם ה→  כישלון פרסור-  מוחלףTOC- ה→ [{"chapter":"...","sections":[...]}] JSON
+)fail-safe( המקורי
+)(אינטראקטיבי בלבד Research Planner — 1 שלב
+agents/research_planner.py :קובץ
+. שאלות שבונה את תיק התדרוך10  ראיון של:בפשטות
+, run_pipeline.py --config לא עובד בהרצת רקע. בפועל, כשמריצים דרך — input() - משתמש ב:טכנית
+-נושאים · שפות · מאמרי-. השאלות: נושא · מטרות · קהל · טווח שנים · תתJSON- נבנה מקובץ הbrief-מדולג וה הוא
+.משתמש · מומחים · סודיות · שם מחבר
+TOC Architect — 2 שלב
+agents/toc_architect.py :קובץ
+.מחדל- בונה תוכן עניינים ברירת:בפשטות
+: — מבנה קבוע_build_default_toc(brief) :טכנית
+1. )מבנה · מתודולוגיה · מחקר שאלות · רקע( מבוא
+2. )היסטורית התפתחות · תיאוריות · הגדרות( תיאורטי רקע
+3..N. לכל פרק subtopic (אתגרים · הידע מצב · הגדרה)
+N+1. )מגבלות · פערים · סתירות · השוואה( ביקורתי ניתוח
+N+2. ומסקנות דיון
+N+3. מהכתיבה אוטומטית מסונן ←  נספחים
+.config  אינטראקטיבי (הוסף/מחק/ערוך פרק) — לא בשימוש בהרצתrun_toc_architect() יש גם
+
+===== PAGE 17 =====
+🔍 Source Hunter — 3 שלב
+ כן:קריטי · ) שורות600( agents/source_hunter.py :קובץ
+.שלבים-הסוכן הכבד והמורכב ביותר. חמישה תת
+) _build_queries ( א. בניית שאילתות
+:שלושה מקורות, לפי עדיפות
+ .1 נוסף→  עברית- : MAX_QUERIES ראשונות ולא נחתכות ע"י ) — עוברות_multilang_queries ( לשוניות-רב
+) שמתרגמת אתquery_translate (  קריאת גשר אחת→  שאר השפות- , בלי תרגוםbrief.topic -ישירות מ
+ מדלגים בשקט על אותה שפה→  כישלון תרגום- search_topic
+ .2
+- search_topic + כל subtopic -  בסיסיsearch_topic - :) _heuristic_queries ( היוריסטיות
+רק אם הכותרת מכילה אותיות לטיניות (כותרת עברית טהורה מזהמת — search_topic + פרק כותרת
+)חיפוש אקדמי אנגלי
+ .3): מפרק לבלוקים עםpurpose=query_expansion , _llm_concept_queries ( בלוקי מושגים
+ אוmock/api-פעיל רק ב . ומשלב מונח מבלוק א׳ עם מונח מבלוק ב׳synonyms/technical_terms/abbreviations
+. בהמתנת גשר נוספתnative  — כדי לא לתקוע ריצתSURVEY_LLM_QUERY_EXPANSION=1 עם
+) — המנגנון החכםapis/registry.py ( ב. ניתוב תחומי
+. avoid · core · keywords : פרופילי תחום. לכל אחד9
+substring → ) (עם רווח"launch vehicle" -  התאמת תחילית לטוקן→ "rocket*" - :תחביר מילות המפתח
+"ם"\כטב" , "אנוש משאבי" , "טילים" : עברית נתמכת מלא-  טוקן מדויק→ "radar" - בנושא
+:התחומים
+תחום)מאגרי ליבה (מכסה כפולה
+מאגרים שיכובו
+aerospace
+nasa_ntrs, osti, nasa_ads, arxiv
+pubmed, europepmc, dblp
+physics_astro
+inspire_hep, osti, nasa_ads, arxiv
+pubmed, europepmc, dblp
+biomed
+pubmed, europepmc
+dblp, arxiv
+cs_ai
+dblp, arxiv
+pubmed, europepmc
+energy_materials
+osti
+dblp
+
+===== PAGE 18 =====
+תחום)מאגרי ליבה (מכסה כפולה
+מאגרים שיכובו
+chemistry
+osti
+dblp
+earth_env
+osti
+dblp
+social_econ
+—
+pubmed, dblp
+defense_security
+nasa_ntrs, osti
+pubmed, europepmc
+( LLM סיווג - {domain: score} → ) classify_topic (  מילות מפתח- :סיווג כפול
+" נחשב אוטומטית "ודאי→ ) כברירת מחדלSURVEY_LLM_DOMAIN=1 , purpose=domain_classification
+)score = 2(
+. המאגר לא נחוץLLM 2  מילות מפתח או סווג ע"י2≥ . תחום רשאי לכבות מאגר רק אם צבר1 :)כללי הכיבוי (שלוש הגנות
+= UNIVERSAL_CORE -. המאגר לא ב3 לאף תחום מזוהה אחר
+אלה לעולם לא מכובים — {openalex, crossref, semantic_scholar, doaj}
+. מאגרים — כל הכיבוי מבוטל4<  אם אחרי הכול נותרו:רשת ביטחון
+SURVEY_DOMAINS="biomed" · "all"  אוSURVEY_SOURCES="openalex,crossref" :דריסה ידנית
+ — כך שנושא היברידי שומר עלsocial_econ - וגם בbiomed - מופיע גם בpsycholog* :חפיפה מכוונת
+.המאגרים של שני התחומים
+רוויה-ג. לולאת חיפוש עם עצירת
+for שאילתה כל:
+    הפעילים המאגרים בכל חיפוש = תוצאות
+              (מקבלים ליבה מקורות limit × 2)
+    raw_all += תוצאות
+    ייחודיים = dedupe(raw_all)
+    גידול = len(ייחודיים) - קודם
+    if 4 => שאילתה and 0 == גידול:
+        no_growth += 1
+        if no_growth >= 2: break   # 🟢 רוויה
+) _llm_refine_queries ( עצמי-ד. סבב תיקון
+:"זה מה שהופך את הכלי מ"חיפוש" ל"מחקר
+
+===== PAGE 19 =====
+: כל השאילתות שהורצו, ומתבקש+  המאמרים שכבר נמצאו40 כותרות  מקבל אתLLM-ה
+נושאים, שיטות, יישומים או זוויות מרכזיות שאינם מכוסים דיים ע"י המאמרים למעלה. לכל-פערים — תת 5 "זהה עד
+".) מילים2-5( באנגלית פער נסח שאילתה אקדמית
+שאילתות בלבד — שום דבר ממנו לא נכנס- כאן הוא מחוללLLM-ה .השאילתות החדשות רצות במאגרים המאומתים
+.לביבליוגרפיה
+. 1 מכבה את הסבב. תמיד 2 בוליאני. הערך  הואSURVEY_REFINE_ROUND ⚠️
+Snowballing .ה
+מנגנון
+מהCap
+_snowball המאמרים3  שלreferences + citations :Semantic Scholar
+המצוטטים ביותר
+40
+_snowball_opencitations
+Crossref דאטה דרך- מטא→  המובילים2- קשורים לOpenCitations: DOIs
+16
+פלט לשקיפות
+state.source_routing = {domains, llm_domains, core_sources, dropped_sources,
+                        active_sources, override, refine_round, refine_added,
+                        languages_requested, languages_searched}
+state.dedup_stats   = {found, removed, kept, by_doi, by_fuzzy, engine}
+state.prisma        += {identified, duplicates_removed, after_dedup, queries}
+state.timeline_years = [אמיתיות פרסום שנות]
+) וגילוי מאגרים דינמי כשהנושא מחוץ לתחומים18 לשוני מוגבר (סעיף- חיפוש רב:הרחבות מתוכננות לשלב זה ➕
+.)Source Scout — 20 המוכרים (סעיף
+
+===== PAGE 20 =====
+🔬 Reliability Auditor — 4 שלב
+ כן:קריטי · agents/reliability_auditor.py :קובץ
+. בודק שכל מקור באמת קיים, לא נמשך, ומדרג את רמת האמינות שלו:בפשטות
+) apis/retraction.py ( Retraction א. בדיקת
+:ארבעה מקורות, לפי סדר אמינות
+מקור
+מה נבדק
+OpenAlex — האות האמין ביותרis_retracted שדה
+כותרת"retracted:" / "retraction of" " / מכילהRETRACTED"-מתחילה ב
+Retraction Watch). אין הורדה אוטומטית — מדיניות בטיחותdata/retraction_watch.csv ( קובץ מקומי בלבד
+Crossref
+retract/withdraw/removal  עםupdated-by / update-to · "retract"  עםrelation
+.) cap (  קריאות לריצהCrossref: 60 תקציב
+DOI Backfill .ב
+) ואזfind_doi_by_title ( Crossref — שנה+): חיפוש הפוך לפי כותרתdblp/snowball- (נפוץ בDOI מאמר בלי
+. לריצהSURVEY_DOI_BACKFILL_CAP=80 . עד88 , עם סף דמיוןOpenAlex
+. אמיתיDOI-זה מה שהופך "אין קישור" ל
+ — ההבחנה הקריטיתDOI ג. אימות
+{"valid": bool, "checked": bool}
+מצב
+משמעות
+פעולה
+checked=True, valid=Trueנבדק ונמצאdoi_verified = True
+checked=True, valid=Falseנבדק ולא נמצא
+ דיווח+ LIMITED - דירוג ל↓
+
+===== PAGE 21 =====
+מצב
+משמעות
+פעולה
+checked=Falseתקלת רשת — לא הצלחנו לבדוק
+לא נוגעים בדירוג
+זו הנקודה שבה מערכות רבות נכשלות: תקלת רשת חולפת מסמנת מקורות תקינים כ"חשודים". פה זה מנוע ברמת
+.) _http.NetworkError ( HTTP-שכבת ה
+) core/confidence_scorer.py ( ד. דירוג אמינות
+T3 / arxiv / preprint / posted-content / bioRxiv / SSRN
+    → EMERGING  (עמיתים ביקורת עברו טרם — בלבד רעיונות)
+peer-reviewed (המאגרים ספקי כל של מלא מילון):
+    journal-article · journalarticle · conference-paper · proceedings-article
+    conference · article · review · review-article · book-chapter
+    report · report-component
+    ├─ 10 ≥ ציטוטים  →  HIGH
+    ├─ שנים 3 ≤ גיל  →  HIGH   ★ ציטוטים לצבור הספיק לא טרי מאמר
+    └─ אחרת          →  MODERATE
+T1 סמכותי (דוח NTRS/OSTI/Sandia) → MODERATE
+אחרת → LIMITED
+ אומרOpenAlex — כל ספקי המאגרים  מילון סוגי הפרסום חייב לכסות את)1( :שני תיקונים היסטוריים מקודדים כאן
+. "JournalArticle"  אומרSemantic Scholar , "journal-article"  אומרCrossref , "article"
+ ציטוטים הוא לא מאמר0  עם2025  מאמר משנת)2( . LIMITED -חוסר בכיסוי גרם לכל מאמר לגיטימי ליפול ל
+.גרוע — הוא מאמר טרי
+,עת-, התאמת תחום), פרופיל כתבh-index(  תשעה אותות אמינות נוספים — פרופיל מחבר:הרחבה מתוכננת ➕
+.21  ועוד — ראה סעיףCOI ,עצמי-ציטוט
+📄 Full-Text — 5 שלב
+), גם ריקdict  כן (תמיד מחזיר:קריטי · core/fulltext.py :קובץ
+
+===== PAGE 22 =====
+.גוף המאמר, לא רק את התקציר  מנסה להוריד את:בפשטות
+:הצינור
+1. Europe PMC → לפי חיפוש DOI/כותרת → PMCID → fullTextXML (JATS)
+                הסרת :ניקוי <table-wrap>, <ref-list>, <fig>
+                דורש: inEPMC=Y, תווים 800> אורך
+2. Unpaywall  → best_oa_location.url_for_pdf
+3. חילוץ PDF  → PyMuPDF (fitz) או pypdf — מותקן אם רק
+4. Chunking   → 1200 150 חפיפה ,תווים
+5. הנושא מונחי לפי ניקוד →  רלוונטיות → top-4 chunks
+. SURVEY_FULLTEXT_MAX_PAPERS=6  קודם. עדDOI  עםOpen Access עדיפות: מאמרי
+:למה זה משנה — ההשפעה על הכתיבה
+מצב
+ מקבלWriter-ההנחיה שה
+יש טקסט
+מלא
+"בסס טענות חזקות עליהם — "חלק מהמקורות כוללים קטעים מהטקסט המלא
+אין
+ודאות בלשון-הימנע מטענות חזקות שאינן נתמכות בתקציר; סמן אי — "המקורות כוללים תקצירים בלבד
+"זהירה
+🌐 Deep Research Engine — 5.7 שלב
+) כן (לעולם לא זורק:קריטי · ) שורות613( agents/deep_research.py :קובץ
+. בגוף הפרקים[W#] - יהיו זמינים לציטוט כweb-, כדי שממצאי הWriter-לפני ה השדרוג המהותי ביותר של המערכת. רץ
+בשטח — מי היצרנים, מה הרגולציה, אילו המחקר אומר. זה מספר לך מה קורה  הסקר האקדמי מספר לך מה:בפשטות
+.תוכניות ממשלתיות רצות, מה קרה בשנה האחרונה. ומאמת את זה
+) dr_plan (  — תכנוןA שלב
+: מחזירLLM-ה
+
+===== PAGE 23 =====
+שדה
+תפקיד
+relevanceשער אוטומטי — low / medium / high
+rationaleמשפט הסבר
+entity_type + catalog_potential
+?האם הנושא מזמין טבלת השוואה
+subquestions
+target_sources - וangles שאלות עם- תת4-7
+:שער הרלוונטיות קובע כמה סבבים ירוצו
+high   → MAX_ROUNDS      (3)   פעילים רגולציה/מוצרים/שוק עם נושא
+medium → MAX_ROUNDS - 1  (2)
+low    → 1                     טהור תיאורטי נושא
+.בכל סקר, בלי לבזבז על נושא שלא צריך את זה deep-research זה מה שמאפשר להריץ
+) dr_round{N} (  — לולאת המחקרB שלב
+:מפת כיסוי מחושבת  מקבלLLM-בכל סבב ה
+- SQ1 [✅ ממצאים 3 ,מכוסה]: בתחום המרכזיים השחקנים מי?
+- SQ2 [🟡 ממצאים 1 ,חלקי]:  העדכני הרגולציה מצב מה?
+- SQ3 [🔴 ממצאים 0 ,פתוח]:  בפועל ההטמעה עלויות מה?
+. = אין🔴 ·  = יש ממצא🟡 ·  דומיינים שונים2≥ וגם  ממצאים2≥ = ✅ :הכללים
+.)""אל תחזיר אותם שוב( ים שכבר נאספוURL- ה30  רשימת עד+
+: ואילך נוספת הנחיית העמקה2 מסבב
+השאלות הפתוחות/חלקיות בלבד. רד לעומק — עקוב אחרי קישורים מהדפים-"זהו סבב העמקה: התמקד בתת
+".)שקראת, חפש מסמכי מקור (דוחות, מפרטים, הודעות רשמיות), וגוון דומיינים (אל תחזור לאתרים שכבר מוצו
+:) _ROUND_SYSTEM ( מערכת
+
+===== PAGE 24 =====
+) לפני מענה — אל תענהWebFetch( ) ופתח וקרא דפים מלאיםWebSearch(  אמיתייםweb "חובה: בצע חיפושי
+ חייב להיות ציטוט מילולי מהדף שנקרא. העדףquote  חייב להיות קישור שנצפה בפועל, וכלURL מהזיכרון. כל
+".מקורות ראשוניים
+. עוצר מיד→  ממצאים חדשים0  סבב שהחזיר:רוויה-עצירת
+ — שכבת האימותC שלב
+הזיה המרכזי- — מנגנון האנטי_clean_finding .1
+if not url.startswith("http") or not heading or not insight:
+    return None   # ← נזרק הממצא
+. אמיתי פשוט לא קייםURL ממצא בלי
+ על כותרותFuzzy -  בסוף/ , ?utm... , #fragment , www. , https://  מנורמל: הסרתDedup - URL .2
+) core.dedup.similarity ( 88≥
+LLM ) — קוד קשיח, לאclassify_tier ( . דירוג דומיינים3
+Tierמה נכלל
+W-T1
+סמכותי
+: רשימה לבנה+ .ac.uk / .gov.uk / .ac.il / .gov.il / .int / .edu / .mil / .gov סיומות
+nasa.gov, esa.int, iso.org, itu.int, ieee.org, who.int, nist.gov, europa.eu, oecd.org, worldbank.org,
+...nature.com, science.org, arxiv.org, acm.org
+W-T2
+מבוסס
+reuters, apnews, bloomberg, ft, wsj, economist, bbc, nytimes, guardian, cnbc, axios, politico,
+spacenews, defensenews, janes, aviationweek, breakingdefense, techcrunch, wired, arstechnica,
+ אתר+ ...theverge, statista, mckinsey, gartner, deloitte, globes, calcalist, themarker, timesofisrael
+יצרן/ארגון רשמי מוצהר
+W-T3
+כללי
+blogspot, wordpress, medium, substack, reddit, quora, facebook, x/twitter, linkedin, youtube,
+ויקיפדיה (שלישוני — נקודת פתיחה בלבד, לא מקור) · כל השאר · fandom
+) dr_verify ( . טריאנגולציה4
+או כל ממצא שמכיל ספרה — כי שם הזיות מזיקות ביותר. עד , regulation  אוstat  ממצאים מסוג:מי מאומת
+. SURVEY_DR_VERIFY_CAP=6
+
+===== PAGE 25 =====
+וגם http - מתחיל בsecond_url וגם verdict="corroborated" :התנאי לקבלה
+חובה דומיין שונה לגמרי — _domain(second) != _domain(original)
+ הסבר+ ⚠ במחלוקת שנוי  מסומן→ disputed
+) (ואל תמציאunverified → לא נמצא אישוש
+) _cross_check_academic ( . הצלבה מול הקורפוס האקדמי5
+חיזוק, לא = academic_overlap  מסומן→  לבין כותרת מאמר בסקרweb תובנה) של ממצא+ בין (כותרתfuzzy ≥72
+.כפילות
+) dr_contradictions (  — סתירותD שלב
+· topic : לכיוון הספרות האקדמית. כל סתירהweb  לעצמם, או בין ממצאweb  מתחים ממשיים: בין ממצאי5 עד
+"."רק מתחים שברורים מהמידע שסופק — אל תמציא . מאוזןassessment ·  מקור+ side_b ·  מקור+ side_a
+) dr_entities (  — חילוץ ישויותE שלב
+ תא לא. — נזרקתhttp - שמתחיל בsource_url שורה בלי .) שורות20  עמודות, עד4-8( טבלת השוואה מנורמלת
+0 /  כפוי1 / ) (כשהתכנון זיהה נושא קטלוגיSURVEY_DR_ENTITIES=auto :, לעולם לא ניחוש. מופעל"—" = ידוע
+.כבוי
+עביר-הכלל הבלתי
+. [W#] -אך ורק כ . מצוטטים[n] לעולם לא מקבלים .לעולם לא נכנסים לביבליוגרפיה האקדמית web ממצאי
+· ❌ [2,W3] :לעולם לא לעיגון טענה מדעית. אסור לערבב — רק להקשר שוק/תעשייה/רגולציה משמשים
+✅ [2] [W3]
+-), עדשות חיפוש מובנות, רוויה לפי תתdr_trace (  מצב עומק — רדיפת מקור ראשוני:הרחבה מתוכננת ➕
+.18-19  בשפות נוספות — ראה סעיפיםweb שאלה, וסבבי
+✍️ Writer — 6 שלב
+ כן:קריטי · agents/writer.py :קובץ
+) _find_relevant_papers ( א. שיבוץ מקורות לפרק
+
+===== PAGE 26 =====
+:אלא אם הפרק עוסק בכשל/ביקורת/היסטוריה (מילות מפתח —  מאמרים שנמשכו מוסרים מהבריכה:retracted סינון
+, history , retract , criticism , failure ,היסטור ,מגבל ,סתיר ,ביקורת ,כשל
+.) controvers , limitation
+:לשונית — נקודה עדינה-טוקניזציה דו
+keywords = {t for t in re.findall(r"[a-z0-9]+", title.lower()) if len(t) >= 3}
+, slo → SLO/SLA ·  טוקנים3 → human-in-the-loop · kek , kms → KMS/KEK -מפצל על פיסוק, כך ש
+.) a-z ). טוקנים עבריים נושרים טבעית (אין בהםOCR, LLM, RLS, DPA, PII( . שומר ראשי תיבותsla
+.top-8 → ) מיון לפי (ניקוד, ציטוטים→ ) תקציר+ (כותרת- מספר מילות המפתח שמופיעות ב:ניקוד
+ב. הפרומפט
+מאומתים אקדמיים מקורות (במספרים השתמש [n] כאן שמופיעים כפי):
+- [1] כותרת (שנה, (Smith et al., 2022)): 300 תקציר תווי
+      יש אם ←  ... :המלא מהטקסט קטעים
+- [2] ...
+לפי< :הראיות בסיס על הערה has_fulltext>
+===== ממצאי deep-research (מקורות web אקדמיים לא — פתוחים) =====
+- [W3] תובנה — כותרת (תאריך ,מקור, W-T1 ✓✓מאושש)
+  ← לפי ואז ,קודם מאוששים :ממוין tier. ממצאים 16 עד
+===== נדרש מבנה =====
+כותרת H3 3.3 ,3.2 ,3.1 :סעיף לכל מספרית...
+===== חובה כתיבה כללי =====
+1. בסוגריים אנגלית + עברית — טכניים מונחים .מקצועית עברית
+2. לסעיף פסקאות 2 ,לפרק פסקאות 6 מינימום
+3. ציטוט = מהותית טענה כל [n]. כעובדה תכתוב אל ?מקור אין
+4. מספריים נתונים להמציא אסור
+===== ויזואליים אלמנטים =====
+5-10. CALLOUT / FORMULA (LaTeX!) / TRL / TABLE / CASE / KPI
+ג. דירוג אמינות הפרק
+: על סמך המקורות ששובצוscore_section
+
+===== PAGE 27 =====
+≥3 מקורות HIGH                → HIGH
+≥1 HIGH 2≥ או MODERATE        → MODERATE
+לפחות יש MODERATE אחד         → LIMITED
+אחרת                          → EMERGING
+.HTML- צבעוני ליד כותרת הפרק בbadge-מוצג כ
+ — לולאת התיקוןrevise_section .ד
+Critical- עם רשימת הבעיות מה===== )בכולן לטפל חובה( תיקון הערות =====  בלוק+ אותו פרומפט
+.Reviewer
+" אכיפת משוואות תקינות עם מקרא סמלים, כללי עברית ברורה, קופסת "בפשטות:הרחבות מתוכננות לכתיבה ➕
+.22-23 מקור — ראה סעיפים-בכל פרק, ומצב עומק פרקטי עם דוגמאות מחושבות מעוגנות
+🧷 Claim Grounder — 7 שלב
+ כן:קריטי · agents/claim_grounder.py :קובץ
+"?"הטענה הזו באמת נמצאת במקור שציטטת :משפט ושואל- עובר משפט:בפשטות
+LLM דטרמיניסטי, בלי — א. חילוץ טענות
+ .1
+, [KPI] , [CASE] , [CALLOUT] , תגי[TABLE] , [FORMULA] ): מסיר_strip_for_claims ( ניקוי
+ — משאיר את הפרוזה ואת הציטוטים**bold** ,Markdown , כותרות[TRL:n]
+ .2 או שורה ריקה כפולה(?<=[\.\!\?])\s+ :פיצול למשפטים
+ .3
+:סיווג כל משפט
+מצב
+תוצאה
+15≥ ואורך [n] יש
+טענה אקדמית — נבדקת
+35≥ ואורך טריגר עובדתית-אין ציטוט, אבל יש מילת
+טענה שדורשת מקור
+) [n]  (בלי[W#] רק
+בנפרד — לא נשפט אקדמית web_claim -נספר כ
+
+===== PAGE 28 =====
+מצב
+תוצאה
+[W#]  וגם[n] גם) [n] -נשפט כטענה אקדמית (על סמך ה
+,שיפור ,דיווח ,תוצא ,ניסוי ,מצביע ,הראה ,הוכ ,נמצא ,מצא ,מחקר :טריגר עובדתיות-מילות
+, demonstrat , results , study , showed , found , research , % ,ירידה ,עליי ,הפחת
+improv , reduc
++  ציטוט מילולי+ tier +  אמיתיURL( deep-research  הוא כבר מעוגן בשכבת האימות של: נספר בנפרד[W#] למה
+.נתמך" שגוי-טריאנגולציה). לשפוט אותו מול הקורפוס האקדמי היה מייצר "לא
+. טענות לפרקSURVEY_MAX_CLAIMS=12 עד
+ אחת לפרקLLM ב. השיפוט — קריאת
+.) קטע טקסט מלא אם יש+  תווי תקציר500  עד+  המקורות שצוטטו בהן (כותרת+ מקבל: כל הטענות ממוספרות
+. rewrite + reason + status :מחזיר לכל טענה
+) — שתי נקודות קריטיות_apply_verdicts ( ג. האכיפה
+# 1. היותר לכל → כלל ציטוט בלי עובדתית טענה uncertain
+if not c.citations and status == "supported":
+    status = "uncertain"
+    reason += " (ציטוט ללא טענה)"
+# 2. התוכן על אוטומטית מוחל מרוכך ניסוח
+if status in ("uncertain","unsupported") and c.rewrite in section.content:
+    section.content = section.content.replace(c.text, c.rewrite, 1)
+ — עצמאי ממספור גלובלי[n] מיפוי
+num_to_paper = {i+1: p for i, p in enumerate(sec.papers)}
+בתוך  וגםCitation Manager לפני  עובד גםGrounder- ראה אותו. לכן הWriter-מקומי לפרק, בדיוק כפי שה המיפוי הוא
+.לולאת התיקון
+פלט
+
+===== PAGE 29 =====
+state.grounding_report = {
+  total_claims, supported, uncertain, unsupported,
+  supported_pct, uncertain_pct, unsupported_pct,
+  web_claims,          # שוק-הקשר טענות [W#]
+  by_chapter: [{chapter, total, supported, uncertain, unsupported, web_claims}]
+}
+🧐 Critical Reviewer — 8 שלב
+ לא:קריטי · agents/critical_reviewer.py :קובץ
+.LLM דטרמיניסטי לחלוטין — אפס קריאות . העורך הביקורתי:בפשטות
+בדיקה
+תנאי
+ציטוט שאינו
+תומך
+עם ציטוט status=unsupported
+טענה ללא
+ציטוט
+בלי ציטוט status=unsupported
+ודאית-טענה לאstatus=uncertain
+קפיצות לוגיותunsupported  מהטענות40%>
+ ללא מקורKPI (ציטוט) בו ריק4  ששדה[KPI]
+מספר ללא מקור
+ (מדלג על25>  סמוך, באורך[n]  בלי× / ° / K / cm / mm / kg / GPa / MPa / % משפט עם
+)נוסחאות וטבלאות
+פרק רדודlen(content) < 600
+פרק בלי
+ציטוטים
+ בכלל[n] אין
+אמינות נמוכהconfidence ∈ {LIMITED, EMERGING}
+סמנים שבוריםerror  ברמתmarkers.lint()
+
+===== PAGE 30 =====
+בדיקה
+תנאי
+חזרות בין
+פרקים
+ תווים) שמופיע בשני פרקים שונים25≥(  מילים4-6 רצף של
+:, עם סיומת קבועהWriter- הופך את הרשימה לטקסט הנחיות לbuild_feedback(sec)
+ שאין להם מקור; אל תוסיף טענותKPI/ודאיות; הסר מספרים-]; רכך טענות לאn[ "בסס כל טענה על מקור עם ציטוט
+".חדשות ללא מקור
+🔁 Writer ↔ Reviewer Loop — 9 שלב
+ לא:קריטי · core/orchestrator.py:121-149 :קובץ
+עד SURVEY_MAX_FIX_ROUNDS (2) סבבים:
+    ├─ עם פרקים מצא issues
+    ├─ אין? → break  ✅
+    ├─ פרק לכל: revise_section(feedback)
+    ├─ run_claim_grounder()      ← מחודשת הערכה
+    └─ run_critical_reviewer()
+.audit log-הבעיות שנותרו פתוחות נרשמות ל
+📋 Executive Translator — 10 שלב
+ כן:קריטי · agents/executive_translator.py :קובץ
+: כבר כתב בפרקים, ומייצרWriter- שה[KPI] -מקבל כרמז את בלוקי ה
+רכיב
+דרישה
+EXEC_TEXT משפטים3-4 ,פסקת פתיחה
+
+===== PAGE 31 =====
+רכיב
+דרישה
+4-6 × [KPI_DATA]
+CITE · DESC · LABEL · )$10K/38%/75%( NUM
+5-7 × [CONCLUSION]
+**ציטוט עם הסבר — **הממצא שם
+[ROI_CALC] = סכוםX × Y × Z :חישוב כלכלי מפורש
+.HTML- הופכים לרשת קופסאות ב→ state.kpi_data - מחלץ את הבלוקים ל_parse_kpi_data
+. max_tokens=2000
+Hebrew Editor 🇮🇱 — 11 שלב
+ כן:קריטי · agents/hebrew_editor.py :קובץ
+.ואסור לו לגעת בעובדות —  משפר את העברית:בפשטות
+: _safe_to_apply() זה הסוכן עם מנגנון ההגנה החזק במערכת. כל עריכה עוברת
+בדיקה
+תנאי דחייה
+ריק
+הטקסט הערוך ריק
+אורך
+ מהמקור×2.2 – ×0.5 מחוץ לטווח
+ציטוטים)frozenset(  השתנתה[W#] או [n] קבוצת
+סמנים
+ תגיות השתנתה17 ספירת
+מספרים
+ של כל המספרים/אחוזים השתנהCounter
+תקינותerror  מחזיר שגיאתmarkers.lint
+בטוחות- ללא שינוי (עריכות לא3 ·  קטעים שופרו12" : הסוכן מדווח. הטקסט המקורי נשמר בשלמותו→ עריכה שנדחתה
+.")נדחו
+
+===== PAGE 32 =====
+, /CASE , CASE , /TABLE , TABLE , /FORMULA , FORMULA , /CALLOUT , CALLOUT :הסמנים המוגנים
+, ROI_CALC , /CONCLUSION , CONCLUSION , /KPI_DATA , KPI_DATA , TRL:n , /KPI , KPI
+. /ROI_CALC
+🔖 Citation Manager — 12 שלב
+ כן:קריטי · core/citation_manager.py :קובץ
+ בכל פרק מחדש). הביבליוגרפיה צריכה מספור[1]..[8] ( מקומי לפרק  קיבל מספורWriter- ה:הבעיה שהוא פותר
+. היה מפנה למקור לא נכון5  בפרק[3] ,גלובלי אחיד. בלי הסוכן הזה
+שלושה מעברים
+ מיזוג כפילויות+  — רישום גלובליPass 1
+_key(paper) = "doi:" + normalize_doi(doi)      # ראשונה עדיפות
+           או "title:" + normalize_title(title) # שנייה
+           או "id:" + str(id)                   # אחרונה
+. duplicate_sources_merged -. כפילויות מדווחות בprovisional כל מקור מקבל מספר
+[local] → [prov]  — מיפויPass 2
+mapping = {i+1: registry[_key(p)]["prov"] for i, p in enumerate(sec.papers)}
+ הסמן מוסר מהטקסט לגמרי→ "מספר שאין לו מיפוי = "ציטוט מת . [1,3,4,5] → [1,3-5] :תומך בטווחים
+.ומדווח
+1..M  — מספור סופיPass 3
+final = {prov: i+1 for i, prov in enumerate(sorted(cited_prov))}
+., לא נכנס לביבליוגרפיהuncited_dropped →  מקור שהוקצה לפרק אבל לא צוטט.רק מקורות שצוטטו בפועל
+.כיוונית מלאה-התאמה דו
+בדיקות נוספות
+
+===== PAGE 33 =====
+בדיקה
+פרטים
+שדות חובהsource_type , url -או- doi , year , authors , title
+כותרת↔DOI אימות.התאמה- אי→ 1> התאמה. הפרש שנים- אי→ similarity <80 : SURVEY_VERIFY_DOIS=1
+Cap 20
+ניקוי התקציר
+ בתקציר המנהלים — מוסרים1..M ציטוטים מחוץ לטווח
+עדכון
+sec.citations
+)DOCX מסונכרן למספור הסופי (לשימוש
+תוצר קריטי
+state.cited_papers = [לביבליוגרפיה שנכנסו המקורות רק]
+.לא את כל הבריכה שנסרקה —  מודדEvaluator-זה מה שה
+📊 Visualizer — 13 שלב
+)try/except- כן (עטוף ב:קריטי · agents/visualizer.py :קובץ
+.אף מספר לא מגיע מהמודל — הכול מחושב בקוד . גרפים5  בונה:בפשטות
+#גרף
+סוג
+מקור הנתונים
+1כמות פרסומים לפי שנהbar
+min→max , טווח רציףCounter(Paper.year)
+2התפלגות סוגי מקורותpie
+Counter(Paper.source_type)
+3רמות אמינותpie, צבעים קבועיםCounter(Paper.confidence)
+4מקורות לפי פרקbar
+len(section.papers)
+5
+PRISMA תרשיםflow
+state.prisma
+
+===== PAGE 34 =====
+,grid ) — עם קווי_prisma_svg , _pie_chart_svg , _bar_chart_svg ( Python- נבנים ידנית בSVG-ה
+. בתחתית כל גרףsource_note -ערכים מעל העמודות, מקרא, ו
+:PRISMA תרשים
+    בחיפוש זוהו מקורות 412 :זוהו
+      ↓
+    נותרו 225 → הוסרו 187 :כפילויות ניפוי
+      ↓
+    נסקרו מקורות 225 :מיון
+      ↓
+    נמשכו 2 :הוצאו (retracted) · 14 DOI אומת לא
+      ↓
+    בסקר נכללו מקורות 63 :נכללו
+💡 Ideation Engine — 14 שלב
+ כן:קריטי · agents/ideation_engine.py :קובץ
+. פריטים בכל אחת2-4 . · ניסויים · שימושים עסקיים · סיכונים · שאלות פתוחותMVP ·  קטגוריות: מחקר המשך · כיווני מוצר7
+.)uncertain/unsupported  (פרקים עם טענותgrounding- פערי הידע שזוהו ב:קלט
+:, והבלוק פותח באזהרהHTML- בGenerated Idea badge  כל פריט מקבל:ההפרדה המוחלטת
+ידי המערכת — לא טענה מחקרית ולא-"פרק זה אינו חלק מסקירת הספרות. כל פריט כאן הוא רעיון שנוצר על
+".מבוסס מקור אקדמי
+) (כבוי כברירת מחדלWeb Fallback — 14.0 שלב
+Ideation-מזין רק את ה .Wikipedia OpenSearch + DuckDuckGo Instant Answers — apis/web_search.py
+. ENABLE_LOW_RELIABILITY_WEB=true -. מופעל רק בreliability="low"  כל תוצאה.Engine
+Web Landscape (legacy) — 14.5 שלב
+וגם  לא החזיר ממצאיםdeep-research-רק אם ה  ממצאים, בלי אימות. רץ8  אחת, עדLLM הבלוק הישן — קריאת
+. SURVEY_WEB_LANDSCAPE=1
+
+===== PAGE 35 =====
+🏁 Evaluator — 15 שלב
+ לא:קריטי · agents/evaluator.py :קובץ
+:0-100  ציון משוקלל→ )0-10(  מדדים9
+מדד
+משקל
+איך מחושב
+טענות נתמכות0.20
+supported_pct / 10
+איכות מקורות0.14
+10 × (HIGH×1.0 + MODERATE×0.6 + LIMITED×0.3 + EMERGING×0.15) / n
+n<5  אם0.85× . קנס
+תקינות
+ציטוטים
+0.14
+)3  (מקסmismatch×0.6 · )3  (מקסmissing×0.4 · )4  (מקסdead×0.5 : קנסות10 -
+-מיעוט לא
+נתמכות
+0.12
+10 - unsupported_pct/10
+איכות עברית0.09
+LLM
+גיוון מקורות0.08
+min(5, #מאגרים) + min(3, #סוגים) + min(2, n/20)
+TOC-התאמה ל0.08פרקים שנכתבו / פרקים בתוכנית
+אמינות גרפים0.08
+PRISMA → 3.0 . אין גרפים ואין7 + min(3, #גרפים)
+קוהרנטיות0.07
+LLM
+.אבל המסמך עדיין מופק , אזהרה גלויה במסמך→ . מתחת לסףSURVEY_SCORE_THRESHOLD=60 :סף מעבר
+:שתי החלטות חשובות
+ .1 המובחרים היה30  מקורות ומצטט את400  סקר ממוקד שסורק. papers , לא עלcited_papers המדידה על
+. papers - — נפילה חזרה לcited_papers נענש על הבריכה. אם אין
+ .2
+."דרג — לא "כאילו אין מקור- הוא מקור אמיתי אך נמוךarXiv  מאמר.0 , לא0.15  שווהEMERGING
+: מדווחות בנפרדdeep-research סטטיסטיקות
+
+===== PAGE 36 =====
+scorecard["web_research"] = {findings, corroborated_pct, tier_counts, web_claims}
+.לא משפיעות על הציון האקדמי — אבל הקורא רואה כמה מהסקר נשען על מקורות פתוחים
+🌐 HTML Generator — 16 שלב
+ כן:קריטי · ) שורות1,169( agents/html_generator.py :קובץ
+) — סדר הפעולות חשוב_convert_markers_to_html ( המרת סמנים
+1. [TRL:n]              → <span class="trl-n">TRL = n</span>
+2. [KPI]...[/KPI]       → מוסר (KPIs המנהלים בתקציר מטופלים)
+3. [CALLOUT:color]      → <div class="callout color">, מודגשת ":" עד כותרת
+4. נוסחאות → placeholder \x00FML{i}\x00   ★ קינון מונע
+     [FORMULA]...[/FORMULA]  ·  $$...$$  ·  \[...\]
+     _mathify: ל ]\ [\-ב מחדש עוטף ,קיימים תוחמים מסיר-MathJax
+5. [CASE]a|b|c[/CASE]   → תוכן + תגיות + כותרת עם כרטיס
+6. [TABLE]md[/TABLE]    → <table class="tbl">, [BEST]→class='best', [BAD]→class='bad'
+7. [W3] או [W1,W2]      → <cite class="wcite"> ל קישור עם-#wsrc-3 + tooltip
+8. [1] / [1,2] / [1-3]  → <cite>[...]</cite>
+9. **bold**             → <strong>
+10. שחזור placeholders הפסקאות פיצול לפני ←  הנוסחאות של
+11. ב עוטף לא — לפסקאות פיצול-<p> שכבר אלמנטים HTML
+-, ואם ה\[...\]  התוכן מכיל_mathify ) פותר בעיה אמיתית: אחרי10→4  (שלבplaceholder-טריק ה
+. היה רץ שוב — נוצרו קופסאות נוסחה מקוננות4  של שלבregex
+הבונים
+פונקציה
+מייצר
+_build_cover מדדים6 שער עם
+_count_cited_languages
+) ספירת שפות כנה (ראה למטה★
+_build_reliability_notice
+retracted + מאומתים- מאמרים לא+ הערת אמינות
+
+===== PAGE 37 =====
+פונקציה
+מייצר
+_build_executive_summary
+ROI + ✓  מסקנות+ KPI רשת
+_build_scorecard אזהרה+  פסי התקדמות9 + ציון
+_build_toc, לחיץnested ,עמודי-דו
+_build_section תוכן מומר+  גרפים+  אמינותbadge
+_build_deep_research
+)הבלוק המלא (ראה למטה
+_build_ideation
+badges +  קטגוריות7
+_build_transparency
+grounding + PRISMA + audit log
+_build_bibliography תוויות אימות כנות+ ממוספרת
+ = השפותlen(brief.languages)  השער היה מציג: — תיקון חשוב_count_cited_languages ★
+הכתיבה). כעת: סופר שפות מובחנות לפי- שפות" כשעברית היא רק שפת2" יתר (למשל-לחפש בהן. זו הצהרת שהתבקש
+בין המקורות המצוטטים בלבד. מקור בלי קוד שפה נספר כאנגלית — כך )OpenAlex- מISO  (קודPaper.language
+.יתר-שלעולם אין הצהרת
+:תוויות הביבליוגרפיה — כנות מדורגת
+תווית
+משמעות
+✓ אומת (DOI) ונמצאCrossref  נבדק מולDOI-ה
+DOI נבדק לא
+אין פירושו שהמקור פסול —  אך לא עלה בידינו לאמתוDOI קיים
+ציבורי קישורDOI , איןURL יש
+קישור איןURL  ולאDOI לא נמצא
+RETRACTEDהמאמר נמשך
+·  פס סטטיסטיקות: סבבים · שאילתות · דפים שנקראו · ממצאים- : מוצג כשכבת אמינות נפרדתDeep Research-בלוק ה
++ 📚 אקדמית חפיפה + ⚠ במחלוקת שנוי + ✓✓ מאושש + badge tier : כל ממצא- אוששו · חפיפה לאקדמיה
+
+===== PAGE 38 =====
+#W רשימת מקורות - ) טבלת ישויות (כל שורה עם קישור מקור- ) ⚔(  בלוק סתירות-  מקור מאשש+  קישור+ ציטוט מילולי
+ לכל סבב: כל שאילתה, כל דף שנקרא<details> — יומן תהליך -  בטקסט[W#] ממוספרת — היעד של העוגנים
+break-inside: avoid ,, כל פרק פותח עמוד@page {size: A4; margin: 18mm 16mm} :Print CSS
+.לקופסאות/נוסחאות/גרפים
+DOCX / Slides / Podcast — 17 שלב
+. נפרדtry/except- — כל אחד בbest-effort שלושתם
+) orchestrator._create_docx_fallback ( DOCX
+- לw:bidi  הזרקת אלמנט+ WD_ALIGN_PARAGRAPH.RIGHT : אמיתיMCP. - RTL  ישירות, בליpython-docx
+ ביבליוגרפיה→  פרקים→  תקציר→ Scorecard →  מבנה: שער-  ס"מ2.5  עם שולייםXML - A4
+: — ההמרה לוורדcore/marker_render.py
+סמןWord-ב
+[FORMULA]
+)MathJax  לא מריץWord( LaTeX → Unicode
+<h3>
+3 כותרת רמה
+[TABLE]
+) Light Grid Accent 1 (  אמיתיתWord טבלת
+[CALLOUT]פסקה מודגשת
+[KPI] / [CASE]פסקה מפורמטת
+≤→\leq ×→\times (  אופרטורים25 · )α→\alpha (  אותיות יווניות30 : מטפל בlatex_to_unicode
+- רמות) · חזקות ומדדים ל4 ) (עדb(/)a(→\frac{a}{b} · )x(√→\sqrt{x} · )∞→\infty ∑→\sum
+- · השמטת פקודות לא\operatorname / \text / \mathrm · Unicode ( x^2 →x², P_{out} →P_(out))
+.מוכרות
+) agents/presentation_builder.py ( Slides
+. תווי תקציר250 + )🔴🟠🟡🟢(  אמינותbadge , שקופית לכל פרק עםDavid , פונטMarp Markdown: RTL
+
+===== PAGE 39 =====
+) agents/podcast_builder.py ( Podcast
+. הערת אמינות→  מקורות+  כל פרק→  תקציר→ : כותרתNotebookLM-טקסט נקי ל
+. מודולי הליבה10
+" — למה שום שלב לא "נעלםcore/stage_tracker.py
+tracker.run(name, fn, *args, critical=True, validate=val_papers)
+פרמטר
+התנהגות
+critical=True
+)Source Hunter · Auditor · Writer · Exec · HTML( . הצינור נופל→ כשל
+critical=False
+)Reviewer · Loop · Evaluator( . וממשיכים❌  נרשם→ כשל
+validate
+fn(result) -> (ok, msg)
+:המאמתים
+מאמת
+תנאי כשל
+val_papersאין מאמרים בכלל
+val_papers_after_audit או רשימה ריקהNone
+val_sectionsרוב הפרקים בלי ציטוטים ·  תווים150< פרק
+val_executive תווים100-פחות מ
+val_html
+bytes 2000< · קובץ לא קיים
+
+===== PAGE 40 =====
+ אחרי כל שינוי) — ניתן לבדוק גם אחרי_flush ( בזמן אמת .llm_bridge/stage_log.json -הלוג נכתב ל
+.קריסה. בסוף: דוח מסכם עם סטטוס, זמן ופרטי שגיאה לכל שלב
+ — הסרת כפילויותcore/dedup.py
+.. בלי דרישת התקנהdifflib ) אם מותקן, אחרתtoken_sort_ratio ( RapidFuzz :מנוע דמיון
+DOI  אינםarXiv קישורי · dx.doi.org , doi: , https://doi.org/  אותיות קטנות · הסרת:DOI נרמול
+10. -ומוחזרים כריק · חייב להתחיל ב
+.רווח · דחיסת רווחים→ · פיסוקlowercase · )NFKD(  הסרת ניקוד:נרמול כותרת
+:האלגוריתם
+1. יש DOI כפילות → ?אותו ראינו וכבר מנורמל (by_doi)
+2. אחרת: fuzzy שהתקבל מה כל מול
+   ├─ כפילות → נרמול אחרי זהות כותרות
+   ├─ כפילות לא → )92( סף < דמיון
+   ├─ סף ≥ דמיון:
+   │    ├─ כפילות →        ?שנה אותה ✓
+   │    ├─ כפילות → ?ראשון מחבר אותו ✓
+   │    └─ כפילות →      ?97 ≥ דמיון ✓
+   └─ כפילות לא → אחרת
+/תקציר/שנה/ מחברים חסרים, לוקחתDOI משתדרגת — משלימה  הרשומה שנשמרת:) _merge_into ( מיזוג
+. אם לאחת מהן ישis_open_access=True - גבוה יותר, וcitation_count
+Linter- — הcore/markers.py
+, TABLE , FORMULA , CALLOUT : (חוסמת): תגית לא מאוזנת (מספר פתיחות ≠ סגירות) לאחת מerror רמת
+. KPI , CASE
+. שדות4  ללא[KPI] ·  שדות3  ללא[CASE] · 9..1- מחוץ לTRL ·  לא חוקיCALLOUT  צבע: warning רמת
+סגורות לא-תגיות לא .9..1- מוצמד לTRL , blue → — רק תיקונים שאי אפשר לטעות בהם: צבע לא חוקיautofix
+.)מתוקנות (מסוכן
+APA 7 — core/citation_formatter.py
+Smith, J. :מחבר יחיד
+
+===== PAGE 41 =====
+Smith, J., Doe, A., & Lee, K. :2-20
+ אחרון+ ... +  ראשונים19 :20
+ מלאURL- כDOI · *כוכביות* -כתב עת ב
+(Smith et al., 2022) · (Smith & Doe, 2022) · (Smith, 2022) :Inline
+) — אחזור סמנטי (כבויcore/semantic.py
+ מציב→  לא מוגדרENABLE_SEMANTIC_DOWNLOAD  לא מוריד מודלים אוטומטית. אם:מדיניות בטיחות מפורשת
+., וכשל טעינה משבית בשקטTRANSFORMERS_OFFLINE=1 - וHF_HUB_OFFLINE=1
+-, (ב) הצעת מקורותSource Hunter-. שני שימושים — (א) דירוג המקורות בcosine  דירוג→ embeddings :כשפעיל
+.Claim Grounder-מועמדים לטענות ללא ציטוט ב
+. המאגרים ושכבת הרשת11
+) apis/_http.py ( HTTP- שכבת ה11.1
+יכולת
+פרטים
+ יחידSession
+pool_maxsize=20 , pool_connections=10
+Retry
+Retry-After  · מכבד429/500/502/503/504 ש׳ · עלbackoff 0.8/1.6/3.2 ·  ניסיונות3
+ההבחנה הקריטית) (נבדק ולא נמצא{} ≠ ) (לא הצלחנוNetworkError
+דיסק- עלCache
+) נשמר (כריק404 גם . ימיםTTL 7 , sha1(url+params) , מפתח.http_cache/
+Polite pool
+mailto  פרמטר+ User-Agent → SURVEY_CONTACT_EMAIL
+
+===== PAGE 42 =====
+ ולאliterature-survey-system@users.noreply.github.com ברירת המחדל למייל היא
+.APIs- — שנחסם ע"י חלק מהuser@example.com
+ המאגרים14 11.2
+מאגרTierברירת מחדל
+ייחוד
+OpenAlex
+T1 תמיד✅
+language - ולis_retracted -המקור היחיד ל . עבודות250M
+Crossref
+T1 תמיד✅
+backfill + retraction + . אימותDOI הרשם הרשמי של
+Semantic Scholar
+T2 תמיד✅
+snowballing (citations/references)-המנוע של ה
+DOAJ
+T1 תמיד✅כתבי עת פתוחים
+PubMed
+T1
+✅רפואה-ביו
+Europe PMC
+T1
+✅
+JATS טקסט מלא + רפואה-ביו
+DBLP
+T1
+✅מדעי המחשב
+arXiv
+T3
+✅
+preprints
+NASA NTRS
+T1לפי נושאNASA דוחות
+OSTI
+T1לפי נושא
+משרד האנרגיה האמריקאי
+INSPIRE-HEP
+T1לפי נושא
+פיזיקה של אנרגיות גבוהות
+DataCite
+T1לפי נושא
+מאגרי נתונים
+NASA ADS
+T1דורש מפתח
+אסטרופיזיקה
+CORE
+T2דורש מפתחOA אגרגטור
+Wikipedia + · ) (מקומיRetraction Watch · ) (טקסט מלאOpenCitations (snowballing) · Unpaywall :מאגרי עזר
+.), כבויIdeation( DuckDuckGo
+. מאגרים נוספים שניתן לחבר+30- לSOURCES_CATALOG.md ראה
+
+===== PAGE 43 =====
+:כל מחבר מיישם את אותו ממשק
+search(query, limit, year_from, year_to) -> list[dict]
+. יכול להתייחס לכולם באופן אחידregistry.py ולכן
+---
+חלק ד׳ — עזר
+ שכבות20 — . מנגנוני האמינות12
+#מנגנון
+היכן בקוד
+מה הוא מונע
+1 בלבדAPI-מקורות מSource Hunterמקורות מומצאים
+2 עםDedup DOI + fuzzy
+חיזוק
+core/dedup.pyניפוח מלאכותי של ספירת
+המקורות
+3
+Crossref  מולDOI אימותReliability Auditor שגוי או מומצאDOI
+4
+≠ checked הבחנה
+valid
+apis/_http.pyענישת מקור תקין בגלל תקלת
+רשת
+5 מקורות4- מRetraction
+apis/retraction.pyציטוט מאמר שנמשך
+6 לפי הקשרretracted סינוןwriter._chapter_allows_retractedהצגת מאמר שנמשך כידע תקף
+7 טון זהיר→ Full-text
+core/fulltext.pyטענות חזקות על סמך תקציר
+בלבד
+8
+→ URL  בליweb ממצא
+נזרק
+_clean_finding
+web הזיית מקורות
+
+===== PAGE 44 =====
+#מנגנון
+היכן בקוד
+מה הוא מונע
+9דירוג דומיין דטרמיניסטיclassify_tierבלוג שמוצג כמקור סמכותי
+10טריאנגולציה בדומיין שונהdr_verifyמאומת-נתון מספרי בלתי
+11 נפרד לחלוטין[W#] סמןWriter + Grounder + HTML באקדמיהweb ערבוב
+12 לכל טענהClaim status
+Claim Grounderטענה בלי בסיס במקור
+13
+≤ טענה בלי ציטוט
+uncertain
+_apply_verdicts"עובדות" ללא מקור
+14 דטרמיניסטיReviewer
+Critical Reviewerרוח המודל-ביקורת שתלויה במצב
+15בטוחה-דחיית עריכה לאHebrew Editorשינוי מספר/ציטוט בעריכת לשון
+16הסרת ציטוט מתCitation Manager שלא מפנה לכלום[n]
+17ביבליוגרפיה = מצוטטים
+בלבד
+Citation Managerניפוח רשימת המקורות
+18גרפים מנתונים אמיתייםVisualizerמספרים מומצאים בגרף
+19דאטה-ספירת שפות ממטא_count_cited_languagesיתר בשער-הצהרת
+20
+PRISMA +  סף+ Scorecard
++ Audit
+Evaluator + HTML
+· הוצאת סקר חלש בלי אזהרה
+חוסר שקיפות
+. הסמנים — שפת הכתיבה של המערכת13
+.Word- מעוצב ולHTML- סמנים. הסמנים הופכים ל+ Markdown  כותבWriter-ה
+
+===== PAGE 45 =====
+סמן
+תחבירHTML-לWord-ל
+Callout
+[CALLOUT:color]תוכן :כותרת[/CALLOUT]קופסה צבעונית
+פסקה
+מודגשת
+נוסחה[FORMULA]\eta = P_{out}/P_{in}
+[/FORMULA]
+MathJax
+Unicode
+נוסחה
+inline
+\( x^2 \)
+MathJax
+Unicode
+TRL
+[TRL:7]
+badge
+(TRL 7)
+טבלה[/TABLE] + md + [TABLE]
+<table>טבלת
+Word
+סימון
+בטבלה
+[BAD] / [BEST]ירוק / אדום
+מוסר
+מקרה בוחן[CASE]תוכן |\ תגיות |\ שם[/CASE]כרטיס
+פסקה
+KPI
+[KPI]38%\|]22[|\תיאור|\חיסכון[/KPI]מוסר מהפרק
+פסקה
+KPI
+בתקציר
+[KPI_DATA] NUM:/LABEL:/DESC:/CITE:
+[/KPI_DATA]
+KPI קופסת—
+מסקנה[CONCLUSION]**— **שם
+הסבר[/CONCLUSION]
+✓ שורת
+פסקה
+ROI
+[ROI_CALC]X × Y = Z[/ROI_CALC]קופסה
+פסקה
+ציטוט
+אקדמי
+[1-3] · [1,2] · [7] לחיץ<cite>טקסט
+ציטוט
+web
+[W1,W2] · [W3]
+<cite class="wcite">
+כתום מקווקו
+טקסט
+ עובדהblue ·  פער ידע/מגבלהorange ·  יתרון/הישגgreen ·  אזהרה/כשלred : התקנייםCALLOUT צבעי
+.insight/ תצפית מדעיתpurple · חשובה/המלצה
+
+===== PAGE 46 =====
+❌ [2,W3] · ✅ [2] [W3] :כלל הברזל
+. כל דגלי הסביבה14
+LLM-הרצה ו
+דגל
+ברירת מחדל
+תיאור
+SURVEY_LLM_BACKEND
+native
+auto / api / mock / native
+SURVEY_BRIDGE_DIR
+.llm_bridgeחובה ייחודי לכל ריצה מקבילה
+SURVEY_BRIDGE_TIMEOUT
+900 בסקרים ארוכים3600-הגדל ל .שניות
+SURVEY_API_MODEL
+claude-sonnet-4-6
+backend=api -רק ל
+חיפוש ואחזור
+דגל
+ברירת מחדל
+תיאור
+SURVEY_MAX_QUERIES
+14
+)לשוניות-תקרת שאילתות (לא חל על רב
+SURVEY_LIMIT_PER_SOURCE
+5
+) למקורות ליבה2×( תוצאות למאגר
+SURVEY_ENABLE_SNOWBALL
+1
+snowballing
+SURVEY_DEDUP_THRESHOLD
+92
+fuzzy סף דמיון
+SURVEY_REFINE_ROUND
+1
+! מכבה2 ⚠️ .עצמי-סבב תיקון
+SURVEY_SOURCES
+—
+"all" / "openalex,crossref" :דריסה
+SURVEY_DOMAINS
+—כפיית תחומים
+
+===== PAGE 47 =====
+דגל
+ברירת מחדל
+תיאור
+SURVEY_LLM_DOMAIN
+1
+LLM-first סיווג תחומי
+SURVEY_LLM_QUERY_EXPANSION
+off
+native-בלוקי מושגים גם ב
+אימות
+דגל
+ברירת מחדל
+תיאור
+SURVEY_DOI_BACKFILL
+1 חסר לפי כותרתDOI אחזור
+SURVEY_DOI_BACKFILL_CAP
+80תקרה לריצה
+SURVEY_VERIFY_DOIS
+0
+Citation Manager-כותרת ב↔DOI בדיקת
+SURVEY_VERIFY_DOI_CAP
+20תקרה
+SURVEY_RETRACTION_CROSSREF
+1
+Crossref- בretraction בדיקת
+SURVEY_ENABLE_FULLTEXT
+1חילוץ טקסט מלא
+SURVEY_FULLTEXT_MAX_PAPERS
+6תקרת מאמרים
+Deep Research
+דגל
+ברירת מחדל
+תיאור
+SURVEY_DEEP_RESEARCH
+1המנוע המלא
+SURVEY_DR_ROUNDS
+3
+)1-6( סבבים מרביים
+SURVEY_DR_MAX_FINDINGS
+24
+)4-60( תקרת ממצאים
+SURVEY_DR_VERIFY
+1טריאנגולציה
+
+===== PAGE 48 =====
+דגל
+ברירת מחדל
+תיאור
+SURVEY_DR_VERIFY_CAP
+6
+)1-12( כמה ממצאים לאמת
+SURVEY_DR_ENTITIES
+auto
+0 / 1 / auto
+SURVEY_WEB_LANDSCAPE
+0
+)legacy( הבלוק הישן
+SURVEY_WEB_LANDSCAPE_MAX
+8ממצאים בבלוק הישן
+כתיבה ואיכות
+דגל
+ברירת מחדל
+תיאור
+SURVEY_MAX_CLAIMS
+12
+Grounder-טענות לפרק ב
+SURVEY_MAX_FIX_ROUNDS
+2
+writer↔reviewer סבבי
+SURVEY_SCORE_THRESHOLD
+60
+Scorecard-סף מעבר ב
+רשת
+דגל
+ברירת מחדל
+תיאור
+SURVEY_CONTACT_EMAIL
+)(ברירת מחדל תקינהpolite pool — מומלץ להגדיר
+SURVEY_HTTP_CACHE
+1דיסק- עלcache
+SURVEY_HTTP_CACHE_DIR
+.http_cacheמיקום
+SURVEY_HTTP_CACHE_TTL
+604800 ימים7
+SURVEY_HTTP_RETRIES
+3ניסיונות חוזרים
+SURVEY_HTTP_TIMEOUT
+15שניות
+
+===== PAGE 49 =====
+אופציונלי
+דגל
+ברירת מחדל
+תיאור
+ENABLE_SEMANTIC_RETRIEVAL
+offאחזור סמנטי
+ENABLE_SEMANTIC_DOWNLOAD
+offמאשר הורדת מודל
+SEMANTIC_MODEL
+all-MiniLM-L6-v2שם המודל
+ENABLE_LOW_RELIABILITY_WEB
+false
+Ideation- לWeb fallback
+. הפעלה מעשית15
+ הרצה מומלצת15.1
+cd ~/.claude/literature-survey-system
+SURVEY_BRIDGE_DIR=.llm_bridge_myrun \
+SURVEY_BRIDGE_TIMEOUT=3600 \
+SURVEY_CONTACT_EMAIL=you@example.com \
+python run_pipeline.py --config my_survey.json
+.מריצים ברקע — כדי שהצינור לא יחסום את התור בזמן שמשרתים את הגשר
+config- קובץ ה15.2
+{
+  "topic": "1 סוג בסוכרת מחלה-מותאמת אימונותרפיה",
+  "search_topic": "type 1 diabetes immunotherapy beta cell preservation",
+  "audience": "החלטות ומקבלי חוקרים ,רופאים",
+  "year_from": 2015,
+  "year_to": 2026,
+  "goals": ["קלינית יעילות הערכת" ,"בפיתוח הטיפולים מיפוי"],
+
+===== PAGE 50 =====
+  "subtopics": ["teplizumab", "baricitinib", "antigen-specific immunotherapy"],
+  "languages": ["English", "Hebrew"],
+  "user_papers": ["10.1056/NEJMoa1902226"],
+  "author": "לנדסמן יונתן",
+  "toc": [
+    {"chapter": "מבוא", "sections": ["המחקר שאלות" ,"רקע"]},
+    {"chapter": "המחלה מנגנוני", "sections": ["..."]}
+  ]
+}
+.subtopics-מחדל מה- ברירתTOC  אופציונלי — בלעדיו נבנהtoc
+ שירות הגשר — מה לעשות בכל בקשה15.3
+לולאה:
+  1. קרא  <BRIDGE_DIR>/req_*.json  לו שאין resp_*.done
+  2. השדה על הסתכל "purpose" → )7.6 סעיף( נדרשת תשובה איזו קבע
+  3. התשובה את הפק
+  4. כתוב  <BRIDGE_DIR>/resp_<id>.txt
+  5. צור   <BRIDGE_DIR>/resp_<id>.done   (ריק קובץ)
+הושלם הסקר ✅" :עד!"
+:חמישה כללי ברזל
+ .1אמיתיים. לעולם לא WebSearch + WebFetch  — חובהdr_entities / dr_verify / dr_round*
+ שנצפה בפועל — עדיף להשמיטURL מהזיכרון. ממצא בלי
+ .2בשיחה ולחכות לתשובתו  — חובה להציג את התוכן למשתמשtoc_review
+ .3
+[2,W3] , לעולם לא[2] [W3] .בדיוק על כל הסמנים  — לשמורwriter:chN
+ .4 — לא לגעת במספרים, בציטוטים או בסמנים. הם ייבדקוhebrew_editor
+ .5
+)json```- נקי (מותר עטוף בJSON , להחזירJSON  מבקשpurpose- — כשהJSON
+) (בלי רשת ובלי מודלoffline  בדיקה15.4
+SURVEY_LLM_BACKEND=mock python run_pipeline.py --config demo_survey.json
+python tests/run_tests.py
+
+===== PAGE 51 =====
+. מלכודות ומגבלות ידועות16
+הבעיה
+ההסבר
+המעקף
+SURVEY_REFINE_ROUND=2
+2 .בוליאני, לא מונה זה דגל
+truthy-לא נמצא ברשימת ה
+מכבה את הסבב →
+1 תמיד
+גשר משותף-שתי ריצות במקביל ב
+ דורסות זו.llm_bridge
+את קבצי זו
+ ייחודי לכל ריצהSURVEY_BRIDGE_DIR
+ לא מוסיף פרקיםtoc_reviewמשנה שמות ומבנה, אבל פרק
+לא נכנס חדש שנוסף כאן
+לזרימת הכתיבה
+ בדיעבדHTML+DOCX-הזרקה ידנית ל
+ קצרTimeoutש׳ לא מספיק לפרק ארוך900
+deep-research או לסבב
+SURVEY_BRIDGE_TIMEOUT=3600
+ אופציונליPDF חילוץ5 , שלבPyMuPDF/pypdf בלי
+נופל לתקצירים בלבד
+pip install pymupdf
+אחזור סמנטי כבוי
+דורש הורדת מודל, שחסומה
+בכוונה
+ENABLE_SEMANTIC_RETRIEVAL=1
+ENABLE_SEMANTIC_DOWNLOAD=1
+research_planner
+אינטראקטיבי
+— input() -משתמש ב
+נתקע בהרצת רקע
+--topic  או--config תמיד
+טוקניזציה לטינית בשיבוץ
+פרק בעברית טהורה עלול
+ מקורות (אין טוקנים0 לקבל
+) להתאיםa-z
+כלול מונח אנגלי בכותרת או בשמות הסעיפים
+מקורות ליבה דורשי מפתח
+ כבוייםCORE- וNASA ADS
+ללא מפתח
+NTRS/OSTI להגדיר מפתח, או להסתמך על
+ לא מתעדכןRetraction Watchאין הורדה אוטומטית (מדיניות
+)בטיחות
+-להוריד ידנית ל
+data/retraction_watch.csv
+
+===== PAGE 52 =====
+הבעיה
+ההסבר
+המעקף
+_build_reliability_notice
+-לוגיקת זיהוי השפות הלא
+אנגליות בו מסורבלת ומחזירה
+"אנגליות-תמיד "שפות לא
+לא מזיק — הודעה גנרית במקום ספציפית
+. מפת קבצים ובדיקות17
+literature-survey-system/
+├── run_pipeline.py           ← כניסה נקודת
+├── SKILL.md                  ← )קורא שהמודל מה( ההפעלה הוראות
+├── ARCHITECTURE.md           ← הזה המסמך
+├── SURVEY_STANDARDS.md       ← )"זהב תקן"( והעיצוב הסמנים תקן
+├── SOURCES_CATALOG.md        ← 30+ עתידית להרחבה מאגרים
+├── README.md
+│
+├── core/                     התשתית שכבת
+│   ├── orchestrator.py       17 התיקון לולאת + השלבים + DOCX
+│   ├── state.py              5 dataclasses — הנתונים מודל
+│   ├── llm.py                גשר native + mock + api
+│   ├── stage_tracker.py      לדיסק לוג ,פלט אימות ,מעקב
+│   ├── dedup.py              DOI + fuzzy + מיזוג
+│   ├── fulltext.py           Europe PMC + Unpaywall + chunking
+│   ├── citation_manager.py   ביבליוגרפיה + אימות + גלובלי מספור
+│   ├── confidence_scorer.py  HIGH/MODERATE/LIMITED/EMERGING
+│   ├── markers.py            linter + autofix
+│   ├── marker_render.py      סמנים → Word (LaTeX→Unicode)
+│   ├── citation_formatter.py APA 7
+│   └── semantic.py           סמנטי אחזור (opt-in)
+│
+├── agents/                   17 הסוכנים
+│   ├── research_planner.py   (1) אינטראקטיבי ראיון
+│   ├── toc_architect.py      (2) עניינים תוכן
+│   ├── source_hunter.py      (3) ★ 600 שורות
+│   ├── reliability_auditor.py(4) DOI + retraction + דירוג
+│   ├── deep_research.py      (5.7) ★ 613 שורות
+│   ├── writer.py             (6) פרקים כתיבת
+│   ├── claim_grounder.py     (7) טענות עיגון
+│   ├── critical_reviewer.py  (8) דטרמיניסטית ביקורת
+
+===== PAGE 53 =====
+│   ├── executive_translator.py (10)
+│   ├── hebrew_editor.py      (11) בטיחות אכיפת עם
+│   ├── visualizer.py         (13) SVG אמיתיים מנתונים
+│   ├── ideation_engine.py    (14)
+│   ├── evaluator.py          (15) Scorecard
+│   ├── html_generator.py     (16) ★ 1,169 שורות
+│   ├── presentation_builder.py (17) Marp
+│   ├── podcast_builder.py    (17) NotebookLM
+│   └── web_landscape.py      (legacy)
+│
+├── mcp-servers/academic-search/apis/
+│   ├── registry.py           14 + תחומי ניתוב providers
+│   ├── _http.py              session + retry + cache
+│   ├── retraction.py         משיכות בדיקת
+│   ├── web_search.py         fallback ל-Ideation (כבוי)
+│   └── {openalex, crossref, pubmed, europepmc, arxiv, doaj, dblp,
+│         semantic_scholar, opencitations, inspire_hep, osti,
+│         nasa_ntrs, nasa_ads, datacite, core_api}.py
+│
+├── tests/run_tests.py        10 בדיקה חבילות, offline
+├── outputs/                  שהופקו הסקרים כל
+├── data/                     retraction_watch.csv (אופציונלי)
+├── .llm_bridge*/             הריצות גשרי + stage_log.json
+└── .http_cache/              cache קריאות API
+הבדיקות
+:, בלי רשת. מכסהmock - — רץ בpython tests/run_tests.py
+#מודול נבדק
+1
+) מזוהה→  שגיאות; פגום0 →  (טקסט תקיןMarker Linter
+2
+Dedup (DOI + fuzzy)
+3
+) (מיפוי, ציטוט מת, כפילותCitation Manager
+4
+Retraction Check
+5
+Source Hunter
+6
+Claim Grounder
+
+===== PAGE 54 =====
+#מודול נבדק
+7
+Evaluator
+8
+Visualizer
+9
+)בטוחה- (דחיית עריכה לאHebrew Editor
+10
+) (סקר ניסיון מקצה לקצהOrchestrator
+חלק ה׳ — אפיון הרחבות: הדרישות והתכנון המלא
+חלקים א׳–ד׳ מתעדים את מה שקיים בקוד היום. החלק הזה מגדיר שש דרישות הרחבה, עם תכנון מימוש מפורט
+לכל אחת: מה כבר קיים, מה הפער האמיתי, איך בונים בפועל, באילו קבצים נוגעים — ואילו מנגנוני בטיחות שומרים
+.המודל לא ממציא עובדות :העל-על עקרון
+) שכבר מחוברים, ספריות שמותקנותAPIs ,כל תכנון כאן אומת מול הקוד: העוגנים שהוא נשען עליהם (שדות קיימים
+.נבדקו בפועל
+לשוני — הדגשה והעמקה-. חיפוש רב18
+) מה כבר קיים ועובד (חשוב להכיר לפני שמרחיבים18.1
+:כבר מובנית בצינור לשוניות אינה תוספת עתידית — היא-הרב
+
+===== PAGE 55 =====
+יכולת קיימת
+היכן בקוד
+config-) בlanguages ( המשתמש מגדיר שפות חיפושResearchBrief.languages
+) (בלי תרגוםtopic -עברית נכנסת כשאילתה ישירה מ_multilang_queries
+— ) query_translate ( שאר השפות מתורגמות בקריאת גשר אחת
+עם שמירה על מונחים טכניים מקובלים בכל שפה
+source_hunter.py:120-136
+לשוניות מובטחות: נכנסות ראשונות ולא נחתכות ע"י-השאילתות הרב
+MAX_QUERIES
+_build_queries
+שקיפות: אילו שפות חופשו בפועל נרשם ומוצגsource_routing.languages_searched
+)OpenAlex- מISO( Paper.language ספירת שפות כנה בשער: לפי
+המצוטטים, לא לפי מה שהתבקש של המקורות
+_count_cited_languages
+אנגליים מסומנים בהערת האמינות-מאמרים לאreliability_auditor
+ הפער18.2
+ .1 כמעט רק באנגלית, למרותweb- מחפש בdeep-research-האקדמיות — מנוע ה התרגום חל רק על השאילתות
+.) בגרמנית, דיווחי תעשייה ביפניתDIN שדווקא שם חומר ייחודי חי בשפות מקומיות (רגולציה ישראלית בעברית, תקני
+ .2
+SciELO ניתוב מאגרים לפי שפה — שאילתה בספרדית רצה באותם מאגרים כלליים, במקום להדליק את אין
+.) (יפניתJ-STAGE (ספרדית/פורטוגזית) או
+ .3
+. חדשconnector ) — ערוץ שקיים כבר היום, בליfilter=language:de ( OpenAlex אין שימוש בסינון השפה של
+ .4
+Paper.language -) — בזמן ש"[In Chinese]" ( אנגלי" נשען על סימוני כותרת ארכאיים-זיהוי "מאמר לא
+.) כבר נמצא על כל מאמר ופשוט לא משמש לבדיקה הזוOpenAlex- אמין מISO (קוד
+ התכנון18.3
+ — באילו שפות צפויrelevant_languages  יחזיר שדה חדשdr_plan - :)19 לשוני (החיבור לסעיף- רבweb .א
+—  כשהתכנון מזהה שפה רלוונטית- .)...ייחודי שלא קיים באנגלית (עברית לנושא ישראלי, גרמנית לתקינה אירופית חומר
+quote - ה:כלל ברזל לציטוטים - . שלם מוקדש לה: השאילתות בשפת היעד, הדפים נקראים בשפת המקורweb סבב
+ נכתב בעברית. ממצא בשפה זרה מקבל תג שפה גלויinsight -המילולי נשמר תמיד בשפת המקור (הוא הראיה); רק ה
+.web-בבלוק ה
+
+===== PAGE 56 =====
+· J-STAGE →  · יפניתSciELO → מאגר מתוך הקטלוג: ספרדית/פורטוגזית→ מפת שפה- :ב. ניתוב מאגרים לפי שפה
+ לכל שפה:ערוץ אוניברסלי זמין מיד - . languages  — מודלקים אוטומטית כשהשפה ברשימתHAL → צרפתית
+ מאנדקס ספרות בכל השפות, כךOpenAlex — filter=language:XX  עםOpenAlex מבוקשת מריצים גם שאילתת
+. ייעודי אחדconnector לשוני אמיתי עוד לפני שנבנה-שמקבלים כיסוי רב
+— Paper.language != "en"  (סימוני כותרת) בבדיקת_is_non_english  החלפת:ג. תיקון זיהוי השפה
+.אמין, דטרמיניסטי, כבר בנתונים
+ בלוק השקיפות יציג פילוח מלא — כמה מקורות נמצאו בכל שפה, כמה מהם צוטטו, ואילו שפות:ד. שקיפות מורחבת
+.)התבקשו אך לא הניבו דבר (כנות גם בכישלון
+היבט
+פרטים
+דגלים
+מוצעים
+SURVEY_ML_DB_ROUTING=1 · SURVEY_ML_WEB=1
+קבצים,)שפה- סבב+  (פרומפט תכנוןdeep_research.py , source_hunter.py
+html_generator.py ,)language  (פרמטרapis/openalex.py , reliability_auditor.py
+Guardrailsתרגום = שאילתות בלבד; ציטוט מילולי לעולם לא מתורגם; מאמר בשפה זרה מקבל תווית אימות ייעודית
+בביבליוגרפיה
+web-. העמקת מחקר ה19
+ הפער בעומק הקיים19.1
+-תלוי ) כבר עושה סבבים איטרטיביים עם מפת כיסוי — אבל העומק שלו5.7 , שלב9  (סעיףdeep-research-מנוע ה
+:נאכף מבנית פרומפט ולא
+ .1) בלי שאיש רדף אחרי הדוחW-T2( חדשות-אין דרישה מבנית ל"מסמך מקור" — ממצא יכול להישאר ברמת כתבת
+.הרשמי שהכתבה מסכמת
+ .2
+. שנשאר פתוחSQ3  "מציל" גם אתSQ1-גלובלית — סבב שמצא ממצאים ל הרוויה היא-עצירת
+ .3
+. ממצאים מספריים20  ממצאים גם כשיש6-הטריאנגולציה מוגבלת ל
+
+===== PAGE 57 =====
+ .4
+."רד לעומק" היא הנחיה חופשית — אין זוויות חיפוש מו ְב נות
+ התכנון — מצב עומק19.2
+· MAX_FINDINGS=40 · ROUNDS=5 ⇒ deep . מצבSURVEY_DR_DEPTH=standard|deep :א. דגל עומק
+. · רדיפת מקור ראשוני חובהVERIFY_CAP=12
+. כל ממצא מסוגdr_trace  חדשpurpose :) — הרכיב המרכזיPrimary-Source Chase( ב. רדיפת מקור ראשוני
+המסמך  (כתבה, אתר משני) נשלח לסבב איתורW-T2/W-T3  שלו הואURL- שהprogram / regulation / stat
+ שדרוג+ primary_url  נוסף→  נמצא- .), ההודעה הרשמית, המפרט, פרסום הרגולטורPDF( הרשמי שמאחוריו: הדוח
+ — כנות"מקור מסמך ללא"  הממצא מסומן גלויות→  לא נמצא- . הציטוט המילולי נלקח מהמסמך עצמו+ tier-ה
+.במקום העמדת פנים
+."זה הרכיב שהופך "קראתי כתבה על הדוח" ל"קראתי את הדוח
+: במקום "חפש עוד", כל סבב מקבל עדשה מוגדרת:)Lenses( ג. עדשות חיפוש מובנות
+עדשה
+מה היא עושה
+by-entity
+)Y , תוכניתX חיפוש ממוקד סביב הישויות שכבר עלו (יצרן
+by-time החודשים האחרונים12-הצרים לחדש ביותר — מה קרה ב
+by-doctype, מאגרי תקינהsite:*.gov , filetype:pdf :ציד מסמכי מקור
+by-language
+)18 חיפוש בשפה רלוונטית שזוהתה בתכנון (חיבור לסעיף
+ מכוסה, או "מוצה" (שני סבבים רצופים בלי התקדמות✅  מסומןSQ  הלולאה נמשכת עד שכל:שאלה-ד. רוויה לפי תת
+.שאלה פתוחה לא "ניצלת" ע"י הצלחת אחרות-). תתSQ באותו
+ ממצאים עם מסמך מקור · מספר דומיינים ייחודיים · יחס% : ולבלוק השקיפותstats-ה. מדדי עומק שקופים — נוספים ל
+.)נספח→דוח→שנקראו/שאילתות · עומק שרשרת (כתבה-דפים
+היבט
+פרטים
+קבציםhtml_generator.py ,), עדשותper-SQ , לולאתdr_trace  חדשpurpose( deep_research.py
+)(מדדי עומק
+עלות
+ = קריאת גשר אחת לכל קבוצת ממצאים — לא לכל ממצא בנפרדtrace סבב
+
+===== PAGE 58 =====
+היבט
+פרטים
+Guardrail שלא נצפה בפועל — נזרקURL : כפוף לאותו כללdr_trace
+Source Scout — . גילוי מאגרים דינמי20
+ הבעיה20.1
+מקומי — מקבל- מאגרים. נושא שמחוץ להם — משפט, חינוך, כלכלה אקדמית, אמנות, נושא עברי14- פרופילי תחום ו9 יש
+המאגר הטוב ביותר לנושא: סקר משפטי בלי טוב, אבל זה לא ...). זהOpenAlex, Crossref( את הליבה האוניברסלית
+. מפספסים את לב הספרות התחומיתERIC  וסקר חינוך בליSSRN
+ כשהנושא לא מתאים למאגרים הקיימים — המערכת תדע ללכת ולמצוא בעצמה את המאגרים האמינים והטובים:הדרישה
+.ביותר שכן מכילים את החומר
+ מתעוררScout- הטריגרים — מתי ה20.2
+:audit log-ראיה לפער כיסוי. כל טריגר נרשם ל לא בכל ריצה — רק כשיש
+#טריגר
+איתות
+1
+) לא סיווגLLM-, וגם הscores < 2-הניתוב לא זיהה אף תחום ודאי (כל ה""אנחנו עיוורים לתחום הזה
+2 מקורות ייחודיים15- שאילתות: פחות מ4 אחרי""המאגרים לא מכילים את החומר
+3הנושא בכותרות שנמצאו מתחת לסף-רלוונטיות נמוכה: חפיפת מונחי""מצאנו הרבה, אבל לא על זה
+4 מקורות חדשים3- הוסיף פחות מrefine-סבב ה"מחדש לא עזר-"גם ניסוח
+purpose=source_scout — 3.3  שלב חדש20.3
+:) — לא מהזיכרוןWebSearch( מחפש ברשת בפועל Claude Code קריאת גשר שבה
+
+===== PAGE 59 =====
+why , name :)5 , אילו מאגרים אקדמיים/רשמיים הם הסמכותיים והמקיפים ביותר? לכל הצעה (עדX "לנושא
+". suggested_tier ,) (כן/לאfree ,)api / oai-pmh / crossref-doi / none( access ,)(למה דווקא הוא
+) סולם הביצוע — שלוש רמות (מהזול ליקר20.4
+ עוברת סולםScout- חינמי. לכן ההצעה של הAPI אין להם "זו הנקודה הקריטית בתכנון: רוב המאגרים "הטובים ביותר
+:ביצוע
+רמה
+תנאי
+מה קורה
+. קיים1
+ יש+ בקטלוג
+connector
+( ERIC למשל
+— api.ies.ed.gov
+)חינמי, בלי מפתח
+, כמו מאגר תחומי רגילregistry-הדלקה מיידית דרך ה
+OAI- . תומך2
+PMH
+, ריפוזיטוריותAGRIS, HAL
+מוסדיות — מאות מאגרים
+חושפים ממשק קצירה
+סטנדרטי
+)endpoint + metadataPrefix( apis/oai_pmh.py מחבר גנרי אחד
+ לפעמים בליDublin Core :פותח את כולם בלי קוד ייעודי. מגבלה ידועה
+תקצירים
+. אין גישה3
+חינמית
+JSTOR, Scopus,
+HeinOnline
+-: מסננים את החיפוש לכתביOpenAlex ניתוב וירטואלי דרך
+( העת/הריפוזיטוריות שהמאגר מכסה
+OpenAlex .) filter=primary_location.source.id:...
+התוכן בלי גישה למאגר עצמו מאנדקס כמעט הכול — מקבלים את
+TechRxiv- וSSRN, Research Square  כמוpreprint servers :בנוסף, "דלת אחורית" שהקטלוג עצמו ממליץ עליה
+.connector  — בליDOI  לפיCrossref דרך נשלפים
+) מיפוי מוכן מהקטלוג (דוגמאות20.5
+תחום חסר
+המאגר הנכון
+מסלול ביצוע
+חינוך ופדגוגיהERIC חינמי קייםAPI — 1 רמה
+)משפט (ארה"בCourtListener + SSRN
+crossref-doi / 1 רמה
+
+===== PAGE 60 =====
+תחום חסר
+המאגר הנכון
+מסלול ביצוע
+)working papers( כלכלהRePEc
+OAI dump — 2 רמה
+חקלאותFAO AGRIS
+) שכבר מכסהOpenAlex  (אוOAI — 2 רמה
+מדעי הרוח) סגורJSTOR(
+OpenAlex- — ניתוב וירטואלי ב3 רמה
+ — כי "ללכת לחפש מאגרים" זה גם סיכוןGuardrails 20.6
+ .1
+. ציבורי חינמי, בלי חשבונות, בלי מפתחות אישייםGET  רק:מדיניות הבטיחות הקיימת נשמרת
+ .2מציע; אוטומטית מודלק רק מאגר Scout-. הdata/approved_sources.json :Allowlist
+.) toc_review  מוצג למשתמש לאישור בשיחה (אותו דפוס כמו→ מהקטלוג/מהרשימה. מאגר חדש לגמרי
+ .3
+.T1  לכל היותר, לעולם לאT2 מוכר מקבל- נקבע מהקטלוג; מאגר לא:Tier
+ .4
+ERIC :"הודלק דינמית : ומוצגת בבלוק השקיפותsource_routing - כל הדלקה דינמית נרשמת ב:שקיפות
+.") — טריגר: אף תחום לא זוההSource Scout(
+היבט
+פרטים
+קבצים
+ (טריגריםsource_hunter.py : · שינויdata/approved_sources.json , apis/oai_pmh.py :חדש
+) חדשpurpose( SKILL.md ,) (רישום דינמיregistry.py ,)3.3  שלב+
+דגל
+מוצע
+) (ברירת מחדל: פעיל, כי הטריגרים ממילא שמרנייםSURVEY_SOURCE_SCOUT=1
+. הרחבת בדיקות האמינות21
+ שבעת האותות שנבדקים היום21.1
+·  טריות+  · ציטוטיםpeer-reviewed  של המאגר · סוג פרסוםTier · ) מקורות4( DOI (Crossref) · Retraction תקפות
+.) טון כתיבה→( ) · זמינות טקסט מלאpreprint detection( העת-מחרוזת כתב
+
+===== PAGE 61 =====
+.מי כתב את זה, איפה, ומי מימן  כל האותות האלה עוסקים במאמר ובמאגר — אף אחד לא שואל:מה חסר
+ תשעה אותות חדשים — לפי סדר עלות/תועלת21.2
+ (עם מזהי מחברים ומוסדות) על כל מאמרauthorships כבר מחזיר OpenAlex :עובדה מהקוד שהופכת את זה לזול
+. שכבר מחוברAPI העשרה אחת לאותו-שנאסף — האותות הראשונים הם קריאת
+#אות
+מקור נתונים
+מה בודקים
+עלות
+1פרופיל מחבר) (חינמיOpenAlex Authors API
+— , מוסדORCID ,, מספר עבודותh-index
+התאמת תחום: כמה מעבודות ובעיקר
+המחבר הן בתחום הסקר (חפיפת
+). מחבר בלי שום רקורד בתחוםconcepts
+ דגל→
+נמוכה
+2
+-פרופיל כתב
+עת
+OpenAlex Sources API
+is_in_doaj ,שנתי, ותק- דוcitedness
+→ DOAJ- לא+ APC + עת צעיר-. כתב
+predatory חשד
+נמוכה
+3רשימת
+predatory
+מקומית
+קובץ
+data/predatory_journals.csv
+ — קובץ ידני, בליRetraction Watch כמו
+דגל להצגה, לעולם לא .הורדה אוטומטית
+פסילה אוטומטית (הרשימות האלה שנויות
+)במחלוקת
+אפסית
+4מוסד
+ שכבר בנתוניםaffiliationsאוניברסיטה/מכון ממשלתי מוכר מול מוסד
+מזוהה-לא
+אפסית
+5עצמי-ציטוטSemantic Scholar- מreferences
+40% > שיעור הפניות של המחברים לעצמם
+" דגל "ניפוח עצמי→
+בינונית
+6הקשר
+הציטוטים
+OpenCitationsמי מצטט את המאמר — סקירות ומאמרים
+מאוחרים (נקלט בקהילה) או כמעט רק
+המחברים עצמם
+בינונית
+7
+/ Crossmark
+עדכונים
+) (מחוברCrossref הקיימתupdate-to -הרחבת בדיקת ה
+- בלבד גם לretraction-מ
+corrections/errata
+נמוכה
+
+===== PAGE 62 =====
+#אות
+מקור נתונים
+מה בודקים
+עלות
+8
+COI גילוי
+ומימון
+)5 הטקסט המלא (שלבfunding/conflict-of- סריקת הצהרות
+→ ; מימון תעשייתי בנושא רגישinterest
+הערה גלויה ליד המקור
+נמוכה
+9
+-קונצנזוס
+צולב ברמת
+הטענה
+דטרמיניסטי, בלי רשת
+מקבוצות  מקורות+2-טענה שנתמכת ב
+→ )מחקר זרות (סטים זרים של מחברים
+צולבת". זול, חזק, וכולו בקוד-תג "מאוששת
+ כבר יש את רשימתgrounder-קיים (ל
+)הציטוטים של כל טענה
+אפסית
+ המימוש21.3
+ אותות. משתמש באותוenrich(paper) → dict : core/reliability_signals.py מודול חדש
+- מאמרים (המצוטטים בפועל — לא כל הבריכה, באותו היגיון של ה40~  שלretry; cap  ובאותם.http_cache
+.)Scorecard
+breakdown  משוקלל, עם0-100 reliability_score  רמות) נוסף4(  הקייםconfidence - לצד ה:הציון
+.לכל אות
+DOAJ :עת- · כתב✓  עבודות בתחוםh-index 34, 61 :"מחבר ראשי —  נפתח לכל מקור<details> :בביבליוגרפיה
+." · ללא דגלים✓, citedness 4.2
+checked ≠ valid  תקלת רשת = "לא נבדק" (בלי הורדת ציון) — אותה הבחנה:עיקרון קיים נשמר בקפדנות
+.HTTP-שכבר קיימת בשכבת ה
+. מקבל מדד עשירי: "עומק אימות" — אחוז המקורות המצוטטים שעברו העשרה מלאהEvaluator-ה
+היבט
+פרטים
+סדר
+מימוש
+-) ציטוט4( ·  מקומיpredatory list )3( · צולב — דטרמיניסטי- קונצנזוסAPI · (2)  — זול, אותוOpenAlex ) אותות1(
+COI + עצמי
+דגלים
+מוצעים
+SURVEY_SIGNALS_CAP=40 · SURVEY_RELIABILITY_SIGNALS=1
+קבצים, reliability_auditor.py : · שינויcore/reliability_signals.py :חדש
+html_generator.py , evaluator.py ,) (קונצנזוסclaim_grounder.py
+
+===== PAGE 63 =====
+. בהירות: משוואות, עברית, ונגישות למי שלא מבין בנושא22
+ משוואות שנכתבות נכון22.1
+;Unicode  מקבל המרתMathJax; Word- מרנדר בHTML-; ה[FORMULA] - בLaTeX  מונחה לכתובwriter- ה:מה קיים
+. שבור עובר בשקט ונשבר אצל הקוראLaTeX . תגית סגורה ≠ נוסחה תקינה:הפער . בודק רק שהתגית סגורהlinter-ה
+:התכנון
+ .1
+:) — ואומת שהתשתית קיימתcore/markers.py  אמיתי (הרחבתFormula Linter
+error . נוסחה שנכשלת בפרסינג = שגיאתLaTeX offline מותקן ומפרסר matplotlib.mathtext
+, איסור תווים\left/\right - ו{}  בלולאת התיקון. בנוסף, בדיקות זולות: איזוןwriter-שמחזירה את הפרק ל
+.), חובת יחידות לגדלים פיזיקלייםRTL עבריים בתוך נוסחה (שוברים
+ .2 — הספק מוצאP_out ; — נצילותη :"כאשר —  חייבת שורת "כאשר:" אחריה[FORMULA]  כל:חובת מקרא סמלים
+.issue =  מוסיף בדיקה דטרמיניסטית: נוסחה בלי מקרא בסביבתהCritical Reviewer-. ה"]W[
+ .3 בפרקים טכניים — לא נוסחה בודדת תלושה אלא רצף נוסחאות עם משפט מקשר בין שלב:שרשרת במקום קפיצה
+.)23 לשלב (ראה סעיף
+ .4
+. דוגמה שגויה, כדי שהמודל יידע בדיוק מה מצופה+  דוגמה תקינה: בפרומפט הכותבFew-shot
+ עברית ברורה22.2
+ "עברית:הפער .) — משפר ניסוח בלי לגעת בעובדות_safe_to_apply (  עם מנגנון ההגנהHebrew Editor :מה קיים
+.טבעית" היא הנחיה כללית; אין מדדים ואין אכיפה
+:התכנון
+ .1 מילים) · פועל פעיל ("החוקרים מצאו", לא25 ≤  משפטים קצרים (יעד: ממוצע:כללי סגנון מחייבים בפרומפט הכותב
+.בהופעה הראשונה בלבד · בלי שרשראות סמיכויות )English( + ידי") · מונח לועזי = עברית-"נמצא על
+ .2, ברוח הקיים): אורך משפט ממוצע · שיעור משפטים ארוכיםLLM  (בליCritical Reviewer-מדדים דטרמיניסטיים ב
+. שנכנס ללולאת התיקוןissue =  מילים) · צפיפות מונחים לועזיים ללא ביאור עברי. חריגה40>(
+ .3
+) במקום הנחיה כללית — וכל ההגנות הקיימות (ציטוטים, סמנים, מספריםHebrew Editor- ממוקד לchecklist
+.נשארות בתוקף מלא
+ נגישות למי שלא מבין בנושא22.3
+
+===== PAGE 64 =====
+מומחה מקבל שכבת "בפשטות", מומחה מקבל את העומק. אף-באותו מסמך — קורא לא  שני מסלולי קריאה:העיקרון
+.אחד לא מוותר לטובת השני
+ .1, עוברתTOC- בשפה פשוטה — מיוצרת בשלב בניית ה""מה בפרק  מלווה בשורתTOC- כל פרק ב:תוכן עניינים מוסבר
+. מתחת לשם הפרקHTML-), ומוצגת בtoc_review (  לאישור המשתמשTOC-עם ה
+ .2 משפטים בלי2-3 — [CALLOUT:blue]בפשטות: ...[/CALLOUT] :קופסת "בפשטות" בפתיחת כל פרק
+= " (פרק בלי קופסת "בפשטותReviewer-ז'רגון שמסבירים מה הפרק אומר. חובה בפרומפט הכותב, נאכף ע"י ה
+.)issue
+ .3 חדשpurpose .קיים היום ואינו מנוצל state.glossary  עובדה מהקוד — השדה:מילון מונחים אוטומטי
+ נספח→  הגדרה של שורה בשפה פשוטה לכל אחד+  המונחים המרכזיים20-40 : אחרי הכתיבה, חילוץglossary
+.HTML- במופע הראשון של כל מונח בtooltip + ""מילון מונחים
+ .4, ואיךtier  האמינות של פרק, מה זהbadge , מה משמעות[W#]  ומה זה[n]  מה זה:2 "מדריך לקורא" בעמוד
+. — כך שגם קורא ראשון מבין את שפת המסמךScorecard-קוראים את ה
+ .5
+: מסקנות. קריאה מלאה→ ' קופסאות 'בפשטות→ "קריאה מהירה: תקציר מנהלים :שני מסלולים מוצהרים בשער
+".הכול
+היבט
+פרטים
+קבצים,)" "בפשטות+  מקרא+  (מדדי בהירותcritical_reviewer.py ,)mathtext lint+( markers.py
+,) (תיאורי פרקיםorchestrator.py + toc_architect.py ,)few-shot +  (כללי סגנוןwriter.py
+) מדריך לקורא+ tooltips +  (מילוןhtml_generator.py , glossary purpose :חדש
+דגלים
+מוצעים
+SURVEY_PLAIN_BOXES=1 · SURVEY_GLOSSARY=1 · SURVEY_FORMULA_LINT=1
+. עומק פרקטי — עד רמת המשוואות והיישום23
+ העיקרון23.1
+) — הוא המסלול השני באותו פרק: קופסת "בפשטות" למעלה בשביל כולם, ומתחתיה22 אינו סתירה לבהירות (סעיף עומק
+.שכבת עומק למי שבא לעבוד עם החומר
+
+===== PAGE 65 =====
+SURVEY_DEPTH=practical —  מצב עומק23.2
+). דרישות לפרק טכני במצבTOC- על פרק ב"depth": "practical" ( config-פרק ב-מופעל גלובלית בדגל, או פר
+:עומק
+רכיב
+מה נדרש
+שרשרת גזירה
+ עם משפט הסבר בין שלב לשלב — מהנחות היסוד ועד הביטוי השימושי. לא נוסחה[FORMULA] רצף
+בודדת שנפלה מהשמיים
+דוגמה מחושבת— [EXAMPLE]תוצאה |\ שלב-שלב חישוב |\ הנחות |\ כותרת[/EXAMPLE] סמן חדש
+הצבת ערכים אמיתיים ותוצאה מספרית
+טבלת פרמטרים
+הנדסית
+כל שורה עם ציטוט —  עם ערכים כמותיים אמיתיים[TABLE]
+נוהל יישום
+ מורחב לצעדים ממוספרים: מה עושים בפועל, באיזה סדר, מה מודדים[CASE]
+תנאי תקפות
+לכל שיטה — טווח שבו המשוואות תקפות (הנחות, משטרים, גבולות). זה מה שמבדיל ידע פרקטי מנוסחה
+מועתקת
+ המרכזי — כי עומק מגביר את פיתוי ההמצאהGuardrail- ה23.3
+:הסכנה במצב עומק ברורה: מודל שמתבקש "דוגמה מחושבת" ימציא ערכים בשמחה. לכן
+ .1
+. אין מצב שלישי.", או סימון מפורש "ערך להמחשה[n] כל ערך מוצב בדוגמה = או ציטוט
+ .2 שנכנסunsupported = : ערך בלי ציטוט ובלי סימון המחשה[EXAMPLE]  מורחב לבדוק בלוקיClaim Grounder-ה
+.ללולאת התיקון
+ .3
+. עולהlow_unsupported ביתר חומרה — המשקל של מעוגנים- במצב עומק מעניש ערכים לאEvaluator-ה
+ .4
+.) הופכת לחובה — מפרטים ודוחות טכניים הם חומר הגלם של העומק, לא כתבות19 רדיפת המקור הראשוני (סעיף
+ שינויים בצנרת23.4
+רכיב
+שינוי
+Writer
+few-shot + 23.2  לפרקי עומק; פרומפט עם דרישות8000→4000 max_tokens
+
+===== PAGE 66 =====
+רכיב
+שינוי
+Full-Text מאמרים — הערכים המספריים חיים בגוף המאמר, לא בתקצירcap 6→12
+markers.py מגן עליו כמו על שאר הסמניםhebrew_editor ;) שדותlint: 4( [EXAMPLE] לומד את
+Critical Reviewer
+issue = תקפות-פרק עומק בלי דוגמה מחושבת / בלי שרשרת גזירה / נוסחה בלי תנאי
+marker_render.py
+) (קופסה ממוספרתWord- ל[EXAMPLE] רינדור
+Evaluatorמצוטטות-מעוגנות, טבלאות-מקרא, דוגמאות-עם-: נוסחאותpractical מדד "עומק פרקטי" במצב
+. סדר מימוש מומלץ24
+:מדורג לפי יחס עלות/תועלת, כשכל שלב עומד בפני עצמו
+שלב
+מה
+למה קודם
+דרישות שזה
+סוגר
+ — זול1
+ומיידי
+Formula Linter · Paper.language →_is_non_english
+ מוסבר · מילוןTOC + " חובת מקרא · קופסת "בפשטות+ (mathtext)
+grounder-צולב ב- כבר קיים) · קונצנזוסstate.glossary ( מונחים
+הכול נשען על תשתית
+קיימת; אפס
+ חדשיםconnectors
+,) (חלקית18
+,) (חלקית21
+22
+2
+:web עת) · מצב עומק-כתב+ (מחברOpenAlex-אותות אמינות מ
+ עדשות+ per-SQ  רוויה+ dr_trace
+; שכבר מחוברAPI
+שדרוג המנוע הקיים
+21 ,19
+3 · מצבallowlist +  גנריOAI-PMH  מחבר+ Source Scout
+) בכל הצנרת[EXAMPLE] (  מלאSURVEY_DEPTH=practical
+דורש קוד חדש
+ואישורי משתמש
+23 ,20
+4
+SciELO/J-( שפה) · ניתוב מאגרים לפי שפה-לשוני מלא (סבבי- רבweb
+)STAGE/HAL
+2-3 תלוי בשלבים) (מלא18
+ אף הרחבה לא מוסיפה ערוץ שבו המודל יכול להכניס "עובדה" בלי מקור. כל יכולת חדשה — מקבלת:המצפן לכל השלבים
+. שכבר קיימתaudit-את שכבת האימות, השקיפות וה
+
+===== PAGE 67 =====
+. תכנון מימוש+ חלקים א׳–ד׳: אפיון הקיים (נכתב מקריאת הקוד). חלק ה׳: אפיון דרישות ההרחבה

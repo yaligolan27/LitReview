@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Runtime state (never commit survey data)
+var/
+outputs/
+.llm_bridge*/
+.http_cache/
+data/retraction_watch.csv
+
+# Tooling
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# OS / editors
+.DS_Store
+*.swp
+.idea/
+.vscode/
