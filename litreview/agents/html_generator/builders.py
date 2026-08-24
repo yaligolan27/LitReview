@@ -69,6 +69,118 @@ def build_reliability_notice(state: SurveyState) -> str:
     return f'<div class="notice">⚠️ <b>הערת אמינות:</b> {" ".join(parts)}</div>'
 
 
+def build_executive(state: SurveyState) -> str:
+    if not state.executive_summary:
+        return ""
+    import re as _re
+    text = state.executive_summary
+    opening = text.split("[", 1)[0].strip()
+    kpi_html = "".join(
+        f'<div class="kpi-box"><div class="num">{esc(b["num"])}</div>'
+        f'<div class="label">{esc(b["label"])}</div>'
+        f'<div class="desc">{esc(b["desc"])} '
+        f'{convert_markers(b["cite"], drop_kpi=False) if b["cite"] else ""}</div></div>'
+        for b in state.kpi_data)
+    conclusions = _re.findall(r"\[CONCLUSION\](.*?)\[/CONCLUSION\]", text, _re.DOTALL)
+    conclusions_html = "".join(
+        f"<li>{convert_markers(c.strip(), drop_kpi=False).replace('<p>', '').replace('</p>', '')}</li>"
+        for c in conclusions)
+    roi = _re.search(r"\[ROI_CALC\](.*?)\[/ROI_CALC\]", text, _re.DOTALL)
+    roi_html = f'<div class="roi">💰 {esc(roi.group(1).strip())}</div>' if roi else ""
+    return f"""<div class="exec">
+<h3>תקציר מנהלים</h3>
+<p>{esc(opening)}</p>
+<div class="kpi-grid">{kpi_html}</div>
+<ul class="conclusions">{conclusions_html}</ul>
+{roi_html}
+</div>"""
+
+
+def build_scorecard(state: SurveyState) -> str:
+    card = state.scorecard
+    if not card:
+        return ""
+    rows = []
+    metrics = card.get("metrics", {})
+    titles = card.get("titles", {})
+    for key, value in metrics.items():
+        pct = round(value * 10)
+        rows.append(
+            f'<div class="metric-row"><span>{esc(titles.get(key, key))}</span>'
+            f'<div class="bar"><span style="width:{pct}%"></span></div>'
+            f'<b>{value}</b></div>')
+    warn = ""
+    if card.get("below_threshold"):
+        warn = (f'<div class="score-warn">⚠️ ציון הסקר ({card["score"]}) נמוך מסף '
+                f'האיכות ({card["threshold"]}). המסמך מופק, אך מומלץ להרחיב את '
+                f'בסיס המקורות ולחזק את עיגון הטענות.</div>')
+    return f"""<div class="scorecard">
+<div class="score-line"><span class="score-num">{card.get("score", "—")}</span>
+<span>/ 100 · ציון איכות שהמערכת נתנה לסקר שהיא עצמה כתבה</span></div>
+{''.join(rows)}
+{warn}
+</div>"""
+
+
+def build_charts(state: SurveyState) -> str:
+    figures = [c for c in state.charts if c.get("title") != "PRISMA" and c.get("svg")]
+    if not figures:
+        return ""
+    figs = "".join(f'<figure>{c["svg"]}</figure>' for c in figures)
+    return f"""<h2 class="chapter"><span>נתונים ומגמות</span></h2>
+<p class="secs">כל הגרפים חושבו בקוד מנתוני המקורות בפועל — אף מספר אינו מגיע מהמודל.</p>
+<div class="charts">{figs}</div>"""
+
+
+def build_ideation(state: SurveyState) -> str:
+    from ..ideation_engine import CATEGORIES
+    if not state.ideation or not any(state.ideation.values()):
+        return ""
+    blocks = []
+    for key, title in CATEGORIES.items():
+        items = state.ideation.get(key) or []
+        if not items:
+            continue
+        lis = "".join(
+            f'<li>{esc(i)} <span class="gen-badge">Generated Idea</span></li>'
+            for i in items)
+        blocks.append(f"<h4>{esc(title)}</h4><ul>{lis}</ul>")
+    return f"""<h2 class="chapter"><span>רעיונות שנוצרו על ידי המערכת</span></h2>
+<div class="ideation">
+<p><b>⚠️ פרק זה אינו חלק מסקירת הספרות.</b> כל פריט כאן הוא רעיון שנוצר על ידי
+המערכת — לא טענה מחקרית ולא מבוסס מקור אקדמי.</p>
+{''.join(blocks)}
+</div>"""
+
+
+def build_web_sources(state: SurveyState) -> str:
+    findings = (state.deep_research or {}).get("findings") or []
+    cited = [f for f in findings if f.get("w_id")]
+    if not cited:
+        return ""
+    stats = (state.deep_research or {}).get("stats") or {}
+    stats_line = (f"סבבים: {stats.get('rounds', '—')} · שאילתות: "
+                  f"{stats.get('queries', '—')} · דפים שנקראו: {stats.get('pages', '—')} · "
+                  f"ממצאים: {len(findings)} · אוששו: {stats.get('corroborated', 0)}")
+    items = []
+    for f in cited:
+        verdict = ""
+        if f.get("verdict") == "corroborated":
+            verdict = ' <span class="vlabel ok">✓✓ מאושש</span>'
+        elif f.get("verdict") == "disputed":
+            verdict = ' <span class="vlabel warn">⚠ שנוי במחלוקת</span>'
+        quote = f'<div class="quote">"{esc(f.get("quote", ""))}"</div>' if f.get("quote") else ""
+        items.append(
+            f'<li id="wsrc-{esc(str(f["w_id"])[1:])}"><span class="wnum">[{esc(f["w_id"])}]</span> '
+            f'{esc(f.get("heading", ""))} — <a href="{esc(f.get("url", ""))}">'
+            f'{esc(f.get("source_name") or f.get("url", ""))}</a> '
+            f'({esc(f.get("date", ""))}) <span class="vlabel na">{esc(f.get("tier", ""))}</span>'
+            f'{verdict}{quote}</li>')
+    return f"""<h2 class="chapter"><span>מחקר עומק — מקורות פתוחים</span></h2>
+<p class="secs">שכבה נפרדת מהביבליוגרפיה האקדמית. {esc(stats_line)}</p>
+<ol class="wsrc">{''.join(items)}</ol>"""
+
+
 def build_toc(state: SurveyState) -> str:
     items = []
     for entry in state.toc:
@@ -110,18 +222,22 @@ def build_transparency(state: SurveyState) -> str:
     ]
     table = "".join(f"<tr><td>{esc(k)}</td><td><b>{esc(v)}</b></td></tr>" for k, v in rows)
 
-    prisma_steps = []
-    flow = [
-        (f"זוהו: {p.get('identified', 0)} מקורות", True),
-        (f"ניפוי כפילויות: הוסרו {p.get('duplicates_removed', 0)}", True),
-        (f"נסקרו: {p.get('after_dedup', 0)} מקורות", True),
-        (f"הוצאו: {p.get('excluded_retracted', 0)} שנמשכו · {p.get('doi_unverified', 0)} ללא אימות DOI", True),
-        (f"נכללו בסקר: {len(state.cited_papers)} מקורות מצוטטים", True),
-    ]
-    for i, (label, _) in enumerate(flow):
-        prisma_steps.append(f'<div class="step">{esc(label)}</div>')
-        if i < len(flow) - 1:
-            prisma_steps.append('<div class="arrow">↓</div>')
+    if p.get("svg"):
+        prisma_steps = [p["svg"]]
+    else:
+        prisma_steps = []
+        flow = [
+            f"זוהו: {p.get('identified', 0)} מקורות",
+            f"ניפוי כפילויות: הוסרו {p.get('duplicates_removed', 0)}",
+            f"נסקרו: {p.get('after_dedup', 0)} מקורות",
+            f"הוצאו: {p.get('excluded_retracted', 0)} שנמשכו · "
+            f"{p.get('doi_unverified', 0)} ללא אימות DOI",
+            f"נכללו בסקר: {len(state.cited_papers)} מקורות מצוטטים",
+        ]
+        for i, label in enumerate(flow):
+            prisma_steps.append(f'<div class="step">{esc(label)}</div>')
+            if i < len(flow) - 1:
+                prisma_steps.append('<div class="arrow">↓</div>')
 
     audit_lines = "".join(
         f"<div>[{esc(e.get('at', ''))}] {esc(e.get('stage', ''))}: {esc(e.get('message', ''))}</div>"

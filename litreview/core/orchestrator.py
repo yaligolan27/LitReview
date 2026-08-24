@@ -29,7 +29,13 @@ from ..agents import (
     toc_architect,
     writer,
 )
+from ..agents.evaluator import run_evaluator
+from ..agents.executive_translator import run_executive_translator
+from ..agents.exports import run_extras
+from ..agents.hebrew_editor import run_hebrew_editor
 from ..agents.html_generator import run_html_generator
+from ..agents.ideation_engine import run_ideation_engine
+from ..agents.visualizer import run_visualizer
 from .checkpoints import Checkpointer, RunRecord
 from .citation_manager import run_citation_manager
 from .context import RunContext
@@ -38,6 +44,7 @@ from .llm import extract_json
 from .stage_tracker import (
     StageFailed,
     StageTracker,
+    val_executive,
     val_html,
     val_papers,
     val_papers_after_audit,
@@ -227,17 +234,17 @@ def build_stages(config: dict[str, Any]) -> dict[str, StageSpec]:
         StageSpec("review", "Critical Reviewer",
                   critical_reviewer.run_critical_reviewer, critical=False),
         StageSpec("fix_loop", "Writer↔Reviewer Loop", _run_fix_loop, critical=False),
-        StageSpec("executive", "Executive Summary", _stub("executive", "M3"),
-                  critical=False),
-        StageSpec("edit_language", "Language Editor", _stub("edit_language", "M3"),
+        StageSpec("executive", "Executive Summary", run_executive_translator,
+                  critical=True, validate=val_executive),
+        StageSpec("edit_language", "Language Editor", run_hebrew_editor,
                   critical=False),
         StageSpec("citations", "Citation Manager", run_citation_manager, critical=True),
-        StageSpec("visualize", "Visualizer", _stub("visualize", "M3"), critical=False),
-        StageSpec("ideation", "Ideation Engine", _stub("ideation", "M3"), critical=False),
-        StageSpec("evaluate", "Evaluator", _stub("evaluate", "M3"), critical=False),
+        StageSpec("visualize", "Visualizer", run_visualizer, critical=False),
+        StageSpec("ideation", "Ideation Engine", run_ideation_engine, critical=False),
+        StageSpec("evaluate", "Evaluator", run_evaluator, critical=False),
         StageSpec("html", "HTML Generator", run_html_generator, critical=True,
                   validate=val_html),
-        StageSpec("extras", "DOCX/Slides/Podcast", _stub("extras", "M3"), critical=False),
+        StageSpec("extras", "DOCX/Slides/Podcast", run_extras, critical=False),
     ]}
 
 

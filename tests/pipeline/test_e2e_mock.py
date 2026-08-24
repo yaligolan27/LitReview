@@ -48,8 +48,16 @@ def test_full_mock_run_produces_valid_rtl_html(tmp_path):
     assert "ביבליוגרפיה" in html
     assert "PRISMA" in html
     assert "הערת אמינות" in html
+    # M3: the full document blocks are all present.
+    assert "תקציר מנהלים" in html and "kpi-box" in html
+    assert 'class="scorecard"' in html
+    assert "נתונים ומגמות" in html and html.count("<svg") >= 4
+    assert "רעיונות שנוצרו על ידי המערכת" in html and "Generated Idea" in html
+    assert 'class="formula"' in html and "MathJax" in html
+    assert '<table class="tbl">' in html
     # No raw block markers may survive conversion.
-    assert "[CALLOUT" not in html
+    for marker in ("[CALLOUT", "[FORMULA]", "[TABLE]", "[KPI]", "[CASE]", "\x00"):
+        assert marker not in html, f"unconverted marker {marker!r}"
     # No mixed academic/web citation may ever appear (iron rule).
     assert not re.search(r"\[\d+\s*,\s*W\d+\]", html)
 
@@ -66,6 +74,12 @@ def test_full_mock_run_produces_valid_rtl_html(tmp_path):
     state = json.loads((workdir / "state.json").read_text(encoding="utf-8"))
     assert 0 < len(state["cited_papers"]) <= len(state["papers"])
     assert state["grounding_report"]["total_claims"] > 0
+    assert state["scorecard"]["score"] > 0
+    assert state["executive_summary"]
+    assert sum(len(v) for v in state["ideation"].values()) > 0
+
+    # DOCX export produced alongside the HTML.
+    assert list((workdir / "outputs").glob("survey_*.docx"))
 
 
 def test_resume_skips_completed_stages(tmp_path, capsys):

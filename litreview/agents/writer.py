@@ -87,6 +87,26 @@ def _evidence_note(papers: list[Paper]) -> str:
             "בתקציר; סמן אי-ודאות בלשון זהירה.")
 
 
+def _web_findings_block(state: SurveyState) -> str:
+    findings = (state.deep_research or {}).get("findings") or []
+    if not findings:
+        return ""
+    lines = ["===== ממצאי deep-research (מקורות web פתוחים — לא אקדמיים) ====="]
+    ordered = sorted(findings, key=lambda f: (f.get("verdict") != "corroborated",
+                                              f.get("tier", "W-T3")))
+    for f in ordered[:16]:
+        w_id = f.get("w_id", "")
+        verified = " ✓✓מאושש" if f.get("verdict") == "corroborated" else ""
+        lines.append(f"- [{w_id}] {f.get('insight', '')} — {f.get('heading', '')} "
+                     f"({f.get('source_name', '')}, {f.get('date', '')}, "
+                     f"{f.get('tier', '')}{verified})")
+    lines.append("כלל ברזל: ממצא web מצוטט אך ורק כ-[W#], לעולם לא בתוך סוגריים "
+                 "משותפים עם מקור אקדמי. ✅ [2] [W3] · ❌ [2,W3]. "
+                 "ממצאי web משמשים להקשר שוק/תעשייה/רגולציה בלבד — "
+                 "לעולם לא לעיגון טענה מדעית.")
+    return "\n".join(lines) + "\n"
+
+
 def build_chapter_prompt(state: SurveyState, entry: TocEntry,
                          chapter_no: int, papers: list[Paper]) -> str:
     sections_list = "\n".join(
@@ -101,7 +121,7 @@ def build_chapter_prompt(state: SurveyState, entry: TocEntry,
 
 {_sources_block(papers)}
 
-הערה על בסיס הראיות: {_evidence_note(papers)}
+{_web_findings_block(state)}הערה על בסיס הראיות: {_evidence_note(papers)}
 
 ===== כללי כתיבה חובה =====
 1. עברית מקצועית. מונח טכני — עברית + אנגלית בסוגריים בהופעה הראשונה.
@@ -110,7 +130,15 @@ def build_chapter_prompt(state: SurveyState, entry: TocEntry,
 4. אסור להמציא נתונים מספריים. מספר ללא מקור ייפסל בביקורת.
 
 ===== אלמנטים ויזואליים =====
-שלב 1-3 אלמנטים במקומות מתאימים: [CALLOUT:blue]כותרת: תוכן[/CALLOUT] (צבעים: red/green/orange/blue/purple), **הדגשה**.
+שלב 5-10 אלמנטים במקומות מתאימים, בתחביר מדויק:
+- [CALLOUT:color]כותרת: תוכן[/CALLOUT] — צבעים: red (אזהרה/כשל), green (הישג),
+  orange (פער ידע/מגבלה), blue (עובדה חשובה/המלצה), purple (תצפית מדעית)
+- [FORMULA]LaTeX תקני[/FORMULA] — נוסחאות ב-LaTeX בלבד, בלי תווים עבריים בתוכן
+- [TRL:n] — רמת בשלות טכנולוגית (1-9)
+- [TABLE]טבלת markdown עם | [/TABLE] — אפשר לסמן תא מנצח [BEST] או חלש [BAD]
+- [CASE]שם המקרה|תגיות|תיאור[/CASE] — מקרה בוחן (3 שדות מופרדים ב-|)
+- [KPI]ערך|תיאור|מקור [n]|הקשר[/KPI] — מדד כמותי (4 שדות, חובה ציטוט)
+- **הדגשה** לטקסט חשוב
 """
 
 

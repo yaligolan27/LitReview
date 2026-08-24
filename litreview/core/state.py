@@ -271,6 +271,7 @@ class SurveyState:
     deep_research: dict[str, Any] = field(default_factory=dict)
     timeline_years: list[int] = field(default_factory=list)
     glossary: list[dict[str, Any]] = field(default_factory=list)
+    charts: list[dict[str, Any]] = field(default_factory=list)   # {title, svg, source_note}
 
     def log(self, stage: str, message: str, **data: Any) -> None:
         entry: dict[str, Any] = {"stage": stage, "message": message, "at": _utcnow()}
@@ -302,6 +303,7 @@ class SurveyState:
             "deep_research": self.deep_research,
             "timeline_years": self.timeline_years,
             "glossary": self.glossary,
+            "charts": self.charts,
         }
 
     @classmethod
@@ -326,6 +328,7 @@ class SurveyState:
             deep_research=data.get("deep_research", {}),
             timeline_years=data.get("timeline_years", []),
             glossary=data.get("glossary", []),
+            charts=data.get("charts", []),
         )
         state._unify_paper_identity()
         return state

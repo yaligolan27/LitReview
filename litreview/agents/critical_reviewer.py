@@ -7,12 +7,58 @@ without-source regex, cross-chapter repetition and KPI checks land in M3.
 
 from __future__ import annotations
 
+import re
+
 from ..core import markers
 from ..core.context import RunContext
 from ..core.state import SurveySection, SurveyState
 
 MIN_CHAPTER_CHARS = 600
 LOGIC_JUMP_UNSUPPORTED_PCT = 40.0
+
+# A number with a unit, no [n] nearby → "number without source" (spec §9.8).
+_UNIT_NUMBER = re.compile(
+    r"\d+(?:\.\d+)?\s*(?:%|°|×|K\b|cm\b|mm\b|kg\b|GPa\b|MPa\b)")
+_CITE_NEAR = re.compile(r"\[\d")
+_BLOCKS = re.compile(
+    r"\[(?:FORMULA|TABLE|KPI|KPI_DATA|ROI_CALC|EXAMPLE)\].*?"
+    r"\[/(?:FORMULA|TABLE|KPI|KPI_DATA|ROI_CALC|EXAMPLE)\]", re.DOTALL)
+_INLINE_MATH = re.compile(r"\\\(.*?\\\)")
+
+
+def _numbers_without_source(content: str) -> list[str]:
+    prose = _INLINE_MATH.sub(" ", _BLOCKS.sub(" ", content))
+    findings = []
+    for match in _UNIT_NUMBER.finditer(prose):
+        window = prose[match.end():match.end() + 25]
+        sentence_start = max(prose.rfind(".", 0, match.start()),
+                            prose.rfind("\n", 0, match.start())) + 1
+        sentence = prose[sentence_start:match.end() + 40]
+        if len(sentence.strip()) <= 25:
+            continue
+        if not _CITE_NEAR.search(window):
+            findings.append(match.group(0).strip())
+    return findings
+
+
+def _kpi_without_citation(content: str) -> int:
+    count = 0
+    for match in re.finditer(r"\[KPI\](.*?)\[/KPI\]", content, re.DOTALL):
+        if not re.search(r"\[\d", match.group(1)):
+            count += 1
+    return count
+
+
+def _shingles(content: str, size: int = 5) -> set[str]:
+    prose = _BLOCKS.sub(" ", content)
+    prose = re.sub(r"\[[^\]]*\]", " ", prose)
+    words = re.findall(r"[\w֐-׿]+", prose)
+    result = set()
+    for i in range(len(words) - size + 1):
+        shingle = " ".join(words[i:i + size])
+        if len(shingle) >= 25:
+            result.add(shingle)
+    return result
 
 
 def review_section(sec: SurveySection) -> list[str]:
@@ -44,6 +90,13 @@ def review_section(sec: SurveySection) -> list[str]:
     if sec.effective_confidence() in ("LIMITED", "EMERGING"):
         issues.append(f"אמינות מקורות נמוכה לפרק: {sec.effective_confidence()}")
 
+    for number in _numbers_without_source(sec.content)[:4]:
+        issues.append(f"מספר ללא מקור: \"{number}\" — הוסף ציטוט [n] או הסר")
+
+    kpi_missing = _kpi_without_citation(sec.content)
+    if kpi_missing:
+        issues.append(f"[KPI] ללא מקור: {kpi_missing} בלוקים בלי ציטוט [n]")
+
     for issue in markers.lint(sec.content):
         if issue.level == "error":
             issues.append(f"סמן שבור: {issue.message}")
@@ -59,11 +112,28 @@ def build_feedback(sec: SurveySection) -> str:
     return "\n".join(lines)
 
 
+def _cross_chapter_repetitions(state: SurveyState) -> None:
+    seen: dict[str, int] = {}
+    reported: set[tuple[int, int]] = set()
+    for i, sec in enumerate(state.sections):
+        for shingle in _shingles(sec.content):
+            if shingle in seen and seen[shingle] != i:
+                pair = (seen[shingle], i)
+                if pair not in reported:
+                    reported.add(pair)
+                    other = state.sections[seen[shingle]].title
+                    sec.issues.append(
+                        f"חזרה בין פרקים: הרצף \"{shingle[:50]}...\" מופיע גם בפרק "
+                        f"\"{other}\"")
+            else:
+                seen[shingle] = i
+
+
 def run_critical_reviewer(ctx: RunContext, state: SurveyState) -> SurveyState:
-    total = 0
     for sec in state.sections:
         sec.issues = review_section(sec)
-        total += len(sec.issues)
+    _cross_chapter_repetitions(state)
+    total = sum(len(s.issues) for s in state.sections)
     state.log("review", "critical review complete",
               issues=total, chapters_with_issues=sum(1 for s in state.sections if s.issues))
     return state
