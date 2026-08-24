@@ -139,6 +139,14 @@ table.tbl td.bad{background:var(--c-emg-bg);color:var(--c-emg-fg);font-weight:70
 .wsrc li{margin-bottom:10px;padding-right:52px;position:relative;font-size:13.5px}
 .wsrc li .wnum{position:absolute;right:0;top:0;font-weight:700;color:#e65100}
 .wsrc .quote{color:var(--muted);font-size:12.5px;font-style:italic}
+.wsrc .primary{font-size:12.5px;margin-top:3px}
+.wsrc .primary a{color:#1d6b2f;font-weight:600}
+details.signals{margin-top:6px;font-size:12.5px}
+details.signals summary{cursor:pointer;color:#5a627a;font-weight:600}
+details.signals .sig-tbl{margin-top:5px;border-collapse:collapse;width:100%}
+details.signals .sig-tbl td{border-top:1px solid #eceef4;padding:3px 6px;vertical-align:top}
+details.signals .sig-tbl td:first-child{width:18px;text-align:center}
+details.signals .sig-tbl td:nth-child(2){white-space:nowrap;color:#3b4252;font-weight:600}
 @media print{
   @page{size:A4;margin:18mm 16mm}
   body{background:#fff}

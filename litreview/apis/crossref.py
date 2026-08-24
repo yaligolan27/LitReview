@@ -121,3 +121,43 @@ def fetch_by_doi(doi: str) -> Paper | None:
         return None
     message = (data or {}).get("message")
     return _normalize(message) if message else None
+
+
+# --- Part-E wave 2: Crossmark / errata / funding signal (spec §21) ---------
+_ERRATA_KINDS = ("correction", "erratum", "addendum", "corrigendum")
+_CONCERN_KINDS = ("retraction", "expression_of_concern", "expression of concern",
+                  "removal", "withdrawal", "partial_retraction")
+
+
+def updates(doi: str) -> dict:
+    """Crossmark relations + funders for a DOI, status-tagged (checked≠valid).
+
+    ``has_concern`` flags a possible retraction / expression-of-concern — a
+    *display* warning only; it never removes the paper (retraction removal is
+    the auditor's job, from 4 dedicated sources).
+    """
+    if not doi:
+        return {"status": "n/a"}
+    try:
+        data = _http.get_json(f"{BASE}/{doi}")
+    except _http.NotFoundError:
+        return {"status": "not_found"}
+    except _http.NetworkError:
+        return {"status": "unchecked"}
+    msg = (data or {}).get("message")
+    if not msg:
+        return {"status": "not_found"}
+    relations = list(msg.get("update-to") or []) + list(msg.get("updated-by") or [])
+    kinds = sorted({str(u.get("type", "")).lower().replace("-", "_")
+                    for u in relations if u.get("type")})
+    funders = [str(f.get("name", "")).strip()
+               for f in (msg.get("funder") or []) if f.get("name")]
+    return {
+        "status": "ok",
+        "has_errata": any(k in _ERRATA_KINDS for k in kinds),
+        "has_concern": any(k.replace("_", " ") in _CONCERN_KINDS or k in _CONCERN_KINDS
+                           for k in kinds),
+        "update_kinds": kinds,
+        "funders": funders[:8],
+        "has_funding": bool(funders),
+    }

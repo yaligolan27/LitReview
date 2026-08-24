@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from ..core.context import RunContext
 from ..core.llm import extract_json
+from ..core.reliability_signals import run_reliability_signals
 from ..core.state import SurveyState
 
 WEIGHTS = {
@@ -62,7 +63,22 @@ def _llm_metrics(ctx: RunContext, state: SurveyState) -> tuple[float, float, str
         return 5.0, 5.0, "LLM metrics unavailable"
 
 
+def _verification_depth(pool) -> float:
+    """Part-E wave 2 10th metric: mean reliability score of cited papers /10.
+    If nothing could be checked (e.g. an offline run), stay neutral at 5.0 —
+    the checked≠valid discipline means we neither reward nor punish."""
+    scores = [p.reliability_signals.get("score") for p in pool
+              if p.reliability_signals and p.reliability_signals.get("score") is not None]
+    if not scores:
+        return 5.0
+    return _clamp(sum(scores) / len(scores) / 10)
+
+
 def run_evaluator(ctx: RunContext, state: SurveyState) -> SurveyState:
+    # Part-E wave 2: enrich cited papers with reliability signals (no-op unless
+    # SURVEY_RELIABILITY_SIGNALS is on). Must precede scoring + HTML.
+    run_reliability_signals(ctx, state)
+
     g = state.grounding_report
     c = state.citation_report
     pool = state.cited_papers or state.papers   # fallback per spec
@@ -103,15 +119,29 @@ def run_evaluator(ctx: RunContext, state: SurveyState) -> SurveyState:
     else:
         metrics["chart_reliability"] = _clamp(7 + min(3, n_charts))
 
-    score = round(sum(WEIGHTS[k] * metrics[k] * 10 for k in WEIGHTS))
+    # Part-E wave 2: a 10th metric ("verification depth"). It enters WEIGHTS
+    # and proportionally rescales the other nine to keep Σweights = 1.0 —
+    # ONLY when the flag is on. With the flag off, weights/titles/metrics are
+    # byte-identical to the 9-metric scorecard.
+    weights = WEIGHTS
+    titles = METRIC_TITLES
+    if ctx.settings.reliability_signals:
+        new_w = 0.08
+        scale = 1.0 - new_w
+        weights = {k: v * scale for k, v in WEIGHTS.items()}
+        weights["verification_depth"] = new_w
+        titles = {**METRIC_TITLES, "verification_depth": "עומק אימות"}
+        metrics["verification_depth"] = _verification_depth(pool)
+
+    score = round(sum(weights[k] * metrics[k] * 10 for k in weights))
     threshold = ctx.settings.score_threshold
     state.scorecard = {
         "score": score,
         "threshold": threshold,
         "below_threshold": score < threshold,
         "metrics": {k: round(v, 1) for k, v in metrics.items()},
-        "weights": WEIGHTS,
-        "titles": METRIC_TITLES,
+        "weights": weights,
+        "titles": titles,
         "notes": notes,
     }
     state.log("evaluate", "scorecard computed", score=score,

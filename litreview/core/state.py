@@ -95,6 +95,10 @@ class Paper:
     source_type: str = ""           # journal-article / preprint / report / ...
     pdf_url: str = ""
     is_open_access: bool = False
+    # Part-E wave 2 (spec §21): reliability signals computed for CITED papers
+    # only, behind SURVEY_RELIABILITY_SIGNALS. Empty {} when the flag is off,
+    # so default serialization and rendering are unchanged.
+    reliability_signals: dict[str, Any] = field(default_factory=dict)
 
     def key_fields_missing(self) -> list[str]:
         missing = []

@@ -60,6 +60,18 @@ W_T3_MARKERS = ("blogspot.", "wordpress.", "medium.com", "substack.com",
                 "x.com", "linkedin.com", "youtube.com", "fandom.com",
                 "wikipedia.org")
 
+# Part-E wave 2 (deep mode): rotating search lenses — each round attacks the
+# open sub-questions from a different angle so coverage is not one-dimensional.
+_LENSES = (
+    ("by-entity", "עדשת ישויות: חפש שחקנים/מוצרים/תקנים ספציפיים בשמם המלא."),
+    ("by-time", "עדשת זמן: התמקד ב-12 החודשים האחרונים — הודעות, עדכונים, גרסאות."),
+    ("by-doctype", "עדשת סוג-מסמך: חפש מסמכי מקור — דוחות רשמיים, מפרטים, פרוטוקולים."),
+    ("by-language", "עדשת שפה: חפש גם מקורות בשפת היעד/המקומית של התחום."),
+)
+
+# Tier authority order for primary-source upgrades (higher = more authoritative).
+_TIER_RANK = {"W-T3": 0, "W-T2": 1, "W-T1": 2}
+
 
 # Two-part public suffixes where the registrable domain is the last THREE
 # labels (so foo.gov.uk and bar.gov.uk are distinct organizations, but
@@ -199,7 +211,7 @@ def _coverage_map(plan: dict, findings: list[dict]) -> str:
 
 
 def _round_prompt(state: SurveyState, plan: dict, findings: list[dict],
-                  round_no: int) -> str:
+                  round_no: int, lens: str = "") -> str:
     seen_urls = "\n".join(f"- {f['url']}" for f in findings[-30:])
     depth = ""
     if round_no >= 2:
@@ -207,6 +219,8 @@ def _round_prompt(state: SurveyState, plan: dict, findings: list[dict],
                  "לעומק — עקוב אחרי קישורים מהדפים שקראת, חפש מסמכי מקור "
                  "(דוחות, מפרטים, הודעות רשמיות), וגוון דומיינים (אל תחזור "
                  "לאתרים שכבר מוצו).")
+    if lens:
+        depth += f"\n{lens}"
     return (
         f"נושא: {state.brief.topic} ({state.brief.search_topic})\n"
         f"מפת כיסוי נוכחית:\n{_coverage_map(plan, findings)}\n\n"
@@ -223,13 +237,14 @@ def _round_prompt(state: SurveyState, plan: dict, findings: list[dict],
 # --- C: verification -------------------------------------------------------
 
 
-def _verify(ctx: RunContext, findings: list[dict]) -> int:
+def _verify(ctx: RunContext, findings: list[dict], cap: int | None = None) -> int:
     settings = ctx.settings
     if not settings.dr_verify:
         return 0
+    cap = cap if cap is not None else settings.dr_verify_cap
     candidates = [f for f in findings
                   if f["type"] in ("stat", "regulation")
-                  or re.search(r"\d", f["insight"])][:settings.dr_verify_cap]
+                  or re.search(r"\d", f["insight"])][:cap]
     if not candidates:
         return 0
     listing = "\n".join(
@@ -284,6 +299,71 @@ def _cross_check_academic(state: SurveyState, findings: list[dict]) -> int:
                 overlaps += 1
                 break
     return overlaps
+
+
+# --- Part-E wave 2 (deep mode): per-SQ saturation + primary-source trace ----
+
+
+def _sq_saturated(sq_id: str, findings: list[dict]) -> bool:
+    """An SQ is saturated once ≥2 findings from ≥2 registrable domains cover it
+    (the ✅ condition of the coverage map)."""
+    matched = [f for f in findings if f.get("sq") == sq_id]
+    return len(matched) >= 2 and len({_domain(f["url"]) for f in matched}) >= 2
+
+
+def _all_saturated(plan: dict, findings: list[dict]) -> bool:
+    sqs = plan.get("subquestions") or []
+    return bool(sqs) and all(_sq_saturated(sq["id"], findings) for sq in sqs)
+
+
+def _trace_primary(ctx: RunContext, findings: list[dict], cap: int) -> int:
+    """Chase the primary source behind secondary-tier program/regulation/stat
+    findings (spec §21). A trace is accepted only with a REAL primary URL
+    (same http gate as clean_finding); the tier is only ever *upgraded*, never
+    lowered. Findings with no primary found are marked honestly."""
+    candidates = [f for f in findings
+                  if f["type"] in ("program", "regulation", "stat")
+                  and _TIER_RANK.get(f.get("tier"), 0) < _TIER_RANK["W-T1"]][:cap]
+    if not candidates:
+        return 0
+    listing = "\n".join(
+        f"- {f['id']} [{f['tier']}]: {f['heading']} — {f['insight']} "
+        f"(מקור נוכחי: {f['url']})" for f in candidates)
+    prompt = (
+        "לכל ממצא, אתר בחיפוש web אמיתי את מסמך המקור הראשוני (הדוח הרשמי, "
+        "המפרט, ההודעה של הגוף עצמו) שעליו הממצא מבוסס — לא כתבה משנית. אם לא "
+        "נמצא מסמך ראשוני אמיתי, אל תמציא — החזר primary_url ריק.\n"
+        f"{listing}\n\n"
+        'החזר JSON: {"traces": [{"id": "F#", "primary_url": "https://...", '
+        '"primary_source": "שם הגוף", "primary_quote": "ציטוט מילולי מהמסמך"}]}'
+    )
+    try:
+        data = extract_json(ctx.llm.complete(
+            prompt, purpose="dr_trace", system=_ROUND_SYSTEM))
+        traces = data.get("traces", []) if isinstance(data, dict) else []
+    except ValueError:
+        traces = []
+    by_id = {f["id"]: f for f in candidates}
+    upgraded = 0
+    for trace in traces:
+        finding = by_id.get(str(trace.get("id", "")).strip())
+        if finding is None:
+            continue
+        primary_url = str(trace.get("primary_url", "")).strip()
+        if not primary_url.startswith("http"):
+            continue
+        finding["primary_url"] = primary_url
+        finding["primary_source"] = str(trace.get("primary_source", "")) or _domain(primary_url)
+        finding["primary_quote"] = str(trace.get("primary_quote", ""))
+        new_tier = classify_tier(primary_url)
+        if _TIER_RANK.get(new_tier, 0) > _TIER_RANK.get(finding.get("tier"), 0):
+            finding["tier"] = new_tier
+            finding["tier_upgraded"] = True
+        upgraded += 1
+    for finding in candidates:
+        if "primary_url" not in finding:
+            finding["primary_traced"] = "not_found"   # honest: no primary located
+    return upgraded
 
 
 # --- D: contradictions -----------------------------------------------------
@@ -364,8 +444,15 @@ def run_deep_research(ctx: RunContext, state: SurveyState) -> SurveyState:
         return state
 
     plan = _plan(ctx, state)
+    # Part-E wave 2: deep mode raises the budget and enables the extra passes.
+    # Standard mode is byte-identical to before (deep=False everywhere below).
+    deep = settings.dr_depth == "deep"
+    configured_rounds = min(6, max(settings.dr_rounds, 5)) if deep else settings.dr_rounds
     max_rounds = _rounds_for(str(plan.get("relevance", "low")).lower(),
-                             settings.dr_rounds)
+                             configured_rounds)
+    max_findings = min(60, max(settings.dr_max_findings, 40)) if deep \
+        else settings.dr_max_findings
+    verify_cap = 12 if deep else settings.dr_verify_cap
 
     findings: list[dict] = []
     seen_urls: set[str] = set()
@@ -373,9 +460,12 @@ def run_deep_research(ctx: RunContext, state: SurveyState) -> SurveyState:
     total_queries = total_pages = 0
 
     for round_no in range(1, max_rounds + 1):
+        lens_name = lens_hint = ""
+        if deep and round_no >= 2:
+            lens_name, lens_hint = _LENSES[(round_no - 2) % len(_LENSES)]
         try:
             data = extract_json(ctx.llm.complete(
-                _round_prompt(state, plan, findings, round_no),
+                _round_prompt(state, plan, findings, round_no, lens=lens_hint),
                 purpose=f"dr_round{round_no}", system=_ROUND_SYSTEM))
         except ValueError:
             ctx.log_line("deep_research", f"round {round_no}: unparseable reply",
@@ -397,24 +487,31 @@ def run_deep_research(ctx: RunContext, state: SurveyState) -> SurveyState:
             finding["id"] = finding["id"] or f"F{len(findings) + 1}"
             findings.append(finding)
             new_count += 1
-            if len(findings) >= settings.dr_max_findings:
+            if len(findings) >= max_findings:
                 break
         total_queries += int(data.get("queries_run") or 0)
         total_pages += int(data.get("pages_read") or 0)
-        rounds_meta.append({"round": round_no,
-                            "summary": str(data.get("round_summary", "")),
-                            "new_findings": new_count})
+        meta = {"round": round_no,
+                "summary": str(data.get("round_summary", "")),
+                "new_findings": new_count}
+        if lens_name:
+            meta["lens"] = lens_name
+        rounds_meta.append(meta)
         ctx.emitter.emit("progress", stage="deep_research",
                          detail=f"round {round_no}: +{new_count} findings "
                                 f"({len(findings)} total)")
         if new_count == 0:
             state.log("deep_research", f"saturation at round {round_no}")
             break
-        if len(findings) >= settings.dr_max_findings:
+        if len(findings) >= max_findings:
+            break
+        if deep and _all_saturated(plan, findings):
+            state.log("deep_research", f"per-SQ saturation at round {round_no}")
             break
 
-    corroborated = _verify(ctx, findings)
+    corroborated = _verify(ctx, findings, cap=verify_cap)
     overlaps = _cross_check_academic(state, findings)
+    traced = _trace_primary(ctx, findings, verify_cap) if deep else 0
     contradictions = _contradictions(ctx, state, findings) if findings else []
     entities = _entities(ctx, state, plan, findings)
 
@@ -424,25 +521,30 @@ def run_deep_research(ctx: RunContext, state: SurveyState) -> SurveyState:
     for i, finding in enumerate(ordered, start=1):
         finding["w_id"] = f"W{i}"
 
+    stats = {
+        "rounds": len(rounds_meta),
+        "queries": total_queries,
+        "pages": total_pages,
+        "corroborated": corroborated,
+        "academic_overlap": overlaps,
+        "tier_counts": {
+            tier: sum(1 for f in findings if f["tier"] == tier)
+            for tier in ("W-T1", "W-T2", "W-T3")
+        },
+    }
+    if deep:
+        stats["depth"] = "deep"
+        stats["primary_traced"] = traced
     state.deep_research = {
         "plan": plan,
         "rounds": rounds_meta,
         "findings": ordered,
         "contradictions": contradictions,
         "entities": entities,
-        "stats": {
-            "rounds": len(rounds_meta),
-            "queries": total_queries,
-            "pages": total_pages,
-            "corroborated": corroborated,
-            "academic_overlap": overlaps,
-            "tier_counts": {
-                tier: sum(1 for f in findings if f["tier"] == tier)
-                for tier in ("W-T1", "W-T2", "W-T3")
-            },
-        },
+        "stats": stats,
     }
     state.log("deep_research", "deep research complete",
               findings=len(findings), corroborated=corroborated,
-              relevance=plan.get("relevance"), rounds=len(rounds_meta))
+              relevance=plan.get("relevance"), rounds=len(rounds_meta),
+              depth=settings.dr_depth, primary_traced=traced)
     return state

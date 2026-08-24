@@ -200,6 +200,8 @@ def build_web_sources(state: SurveyState) -> str:
     stats_line = (f"סבבים: {stats.get('rounds', '—')} · שאילתות: "
                   f"{stats.get('queries', '—')} · דפים שנקראו: {stats.get('pages', '—')} · "
                   f"ממצאים: {len(findings)} · אוששו: {stats.get('corroborated', 0)}")
+    if stats.get("depth") == "deep":
+        stats_line += f" · מצב עומק · מקורות ראשוניים: {stats.get('primary_traced', 0)}"
     items = []
     for f in cited:
         verdict = ""
@@ -208,12 +210,19 @@ def build_web_sources(state: SurveyState) -> str:
         elif f.get("verdict") == "disputed":
             verdict = ' <span class="vlabel warn">⚠ שנוי במחלוקת</span>'
         quote = f'<div class="quote">"{esc(f.get("quote", ""))}"</div>' if f.get("quote") else ""
+        primary = ""
+        if f.get("primary_url"):
+            up = ' <span class="vlabel ok">↑ שודרג</span>' if f.get("tier_upgraded") else ""
+            pq = f' "{esc(f["primary_quote"])}"' if f.get("primary_quote") else ""
+            primary = (f'<div class="primary">📄 מקור ראשוני: '
+                       f'<a href="{safe_href(f["primary_url"])}">'
+                       f'{esc(f.get("primary_source") or f["primary_url"])}</a>{up}{esc(pq)}</div>')
         items.append(
             f'<li id="wsrc-{esc(str(f["w_id"])[1:])}"><span class="wnum">[{esc(f["w_id"])}]</span> '
-            f'{esc(f.get("heading", ""))} — <a href="{esc(f.get("url", ""))}">'
+            f'{esc(f.get("heading", ""))} — <a href="{safe_href(f.get("url", ""))}">'
             f'{esc(f.get("source_name") or f.get("url", ""))}</a> '
             f'({esc(f.get("date", ""))}) <span class="vlabel na">{esc(f.get("tier", ""))}</span>'
-            f'{verdict}{quote}</li>')
+            f'{verdict}{quote}{primary}</li>')
     extra = []
     contradictions = (state.deep_research or {}).get("contradictions") or []
     if contradictions:
@@ -326,6 +335,31 @@ def _verification_label(paper: Paper) -> str:
     return '<span class="vlabel warn">אין קישור</span>'
 
 
+_SIGNAL_ICON = {"ok": "✓", "flag": "⚠️", "unchecked": "…", "n/a": "—"}
+
+
+def _reliability_panel(paper: Paper) -> str:
+    """Part-E wave 2: a collapsible per-source signals panel. Empty string
+    unless SURVEY_RELIABILITY_SIGNALS populated ``paper.reliability_signals``,
+    so the bibliography is unchanged by default."""
+    block = paper.reliability_signals
+    if not block or not block.get("signals"):
+        return ""
+    score = block.get("score")
+    head = f'{score}/100 · {esc(block.get("tier", ""))}' if score is not None \
+        else esc(block.get("tier", "לא נבדק"))
+    flags = block.get("flags", 0)
+    flag_note = f' <span class="vlabel warn">{flags} סימונים</span>' if flags else ""
+    rows = "".join(
+        f'<tr><td>{_SIGNAL_ICON.get(s.get("status"), "·")}</td>'
+        f'<td>{esc(s.get("label", ""))}</td>'
+        f'<td>{esc(s.get("detail", ""))}</td></tr>'
+        for s in block["signals"].values())
+    return (f'<details class="signals"><summary>אותות אמינות: '
+            f'{head} ({block.get("checked", 0)} אותות נבדקו){flag_note}</summary>'
+            f'<table class="sig-tbl">{rows}</table></details>')
+
+
 def build_bibliography(state: SurveyState) -> str:
     items = []
     for paper in state.cited_papers:
@@ -338,7 +372,7 @@ def build_bibliography(state: SurveyState) -> str:
         if link:
             # href and text both escaped; scheme validated (no javascript: URIs).
             apa += f' <a href="{safe_href(link)}">{esc(link)}</a>'
-        items.append(f"<li>{apa} {_verification_label(paper)}</li>")
+        items.append(f"<li>{apa} {_verification_label(paper)}{_reliability_panel(paper)}</li>")
     return f"""<h2 class="chapter"><span>ביבליוגרפיה</span></h2>
 <p class="secs">רק מקורות שצוטטו בפועל בגוף הסקירה נכללים ברשימה ({len(items)} מקורות).</p>
 <ol class="bib">{''.join(items)}</ol>"""

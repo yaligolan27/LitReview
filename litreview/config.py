@@ -136,6 +136,11 @@ class Settings:
     plain_boxes: bool = True         # chapters open with a "בפשטות" box
     glossary: bool = True            # auto glossary + reader guide
 
+    # --- Part-E wave 2 (spec §21, §24) — all default OFF (opt-in) ---
+    reliability_signals: bool = False    # enrich cited papers with 9 trust signals
+    signals_cap: int = 40                # max cited papers to enrich (cost bound)
+    dr_depth: str = "standard"           # standard | deep (primary-source chase, per-SQ saturation)
+
     # --- optional subsystems ---
     semantic_retrieval: bool = False
     semantic_download: bool = False
@@ -195,6 +200,9 @@ class Settings:
             formula_lint=_bool("SURVEY_FORMULA_LINT", True),
             plain_boxes=_bool("SURVEY_PLAIN_BOXES", True),
             glossary=_bool("SURVEY_GLOSSARY", True),
+            reliability_signals=_bool("SURVEY_RELIABILITY_SIGNALS", False),
+            signals_cap=_int("SURVEY_SIGNALS_CAP", 40, lo=0),
+            dr_depth=_str("SURVEY_DR_DEPTH", "standard").lower(),
             semantic_retrieval=_bool("ENABLE_SEMANTIC_RETRIEVAL", False),
             semantic_download=_bool("ENABLE_SEMANTIC_DOWNLOAD", False),
             semantic_model=_str("SEMANTIC_MODEL", "all-MiniLM-L6-v2"),

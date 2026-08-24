@@ -3,11 +3,15 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from ..config import get_settings
 from ..core.state import Paper
 from . import _http
 
 BASE = "https://api.openalex.org/works"
+AUTHORS = "https://api.openalex.org/authors"
+SOURCES = "https://api.openalex.org/sources"
 
 _TYPE_MAP = {
     "article": "journal-article",
@@ -85,6 +89,78 @@ def find_doi_by_title(title: str, year: int | None = None,
             continue
         return candidate.doi
     return ""
+
+
+# --- Part-E wave 2: reliability-signal fetchers (spec §21) -----------------
+# Each returns a status-tagged dict so callers keep the checked≠valid
+# discipline: "ok" (checked, present), "not_found" (checked, absent),
+# "unchecked" (network failure — never a score penalty), "n/a" (no input).
+
+
+def _status_fetch(url: str, params: dict | None = None) -> tuple[str, Any]:
+    try:
+        return "ok", _http.get_json(url, params=params)
+    except _http.NotFoundError:
+        return "not_found", None
+    except _http.NetworkError:
+        return "unchecked", None
+
+
+def fetch_work_by_doi(doi: str) -> dict:
+    """Full OpenAlex work by DOI — carries author ids, institutions, source id
+    and referenced_works, the raw material for the other signals."""
+    if not doi:
+        return {"status": "n/a"}
+    status, data = _status_fetch(BASE, {
+        "filter": f"doi:{doi}", "per-page": 1,
+        "mailto": get_settings().contact_email})
+    if status != "ok":
+        return {"status": status}
+    results = (data or {}).get("results") or []
+    return {"status": "ok", "work": results[0]} if results else {"status": "not_found"}
+
+
+def author_profile(author_id: str) -> dict:
+    short = _short_id(author_id)
+    if not short:
+        return {"status": "n/a"}
+    status, data = _status_fetch(f"{AUTHORS}/{short}",
+                                 {"mailto": get_settings().contact_email})
+    if status != "ok" or not data:
+        return {"status": "not_found" if status == "ok" else status}
+    stats = data.get("summary_stats") or {}
+    return {
+        "status": "ok",
+        "h_index": stats.get("h_index"),
+        "i10_index": stats.get("i10_index"),
+        "works_count": data.get("works_count"),
+        "cited_by_count": data.get("cited_by_count"),
+        "orcid": (data.get("ids") or {}).get("orcid") or data.get("orcid") or "",
+        "display_name": data.get("display_name") or "",
+        "concepts": [c.get("display_name", "")
+                     for c in (data.get("x_concepts") or [])[:8] if c.get("display_name")],
+    }
+
+
+def source_profile(source_id: str) -> dict:
+    short = _short_id(source_id)
+    if not short:
+        return {"status": "n/a"}
+    status, data = _status_fetch(f"{SOURCES}/{short}",
+                                 {"mailto": get_settings().contact_email})
+    if status != "ok" or not data:
+        return {"status": "not_found" if status == "ok" else status}
+    stats = data.get("summary_stats") or {}
+    return {
+        "status": "ok",
+        "two_year_mean_citedness": stats.get("2yr_mean_citedness"),
+        "h_index": stats.get("h_index"),
+        "is_in_doaj": bool(data.get("is_in_doaj")),
+        "is_core": bool(data.get("is_core")),
+        "is_oa": bool(data.get("is_oa")),
+        "apc_usd": data.get("apc_usd"),
+        "display_name": data.get("display_name") or "",
+    }
 
 
 def search(query: str, limit: int = 5,
