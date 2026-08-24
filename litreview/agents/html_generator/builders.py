@@ -69,6 +69,35 @@ def build_reliability_notice(state: SurveyState) -> str:
     return f'<div class="notice">⚠️ <b>הערת אמינות:</b> {" ".join(parts)}</div>'
 
 
+def build_reader_guide(state: SurveyState) -> str:
+    """Part-E §22.3: a page-2 guide so a first-time reader understands the
+    document's language."""
+    return """<div class="transparency">
+<h3>📖 מדריך לקורא</h3>
+<table>
+<tr><td><cite>[7]</cite></td><td>ציטוט אקדמי — מספר בביבליוגרפיה שבסוף המסמך. לחיץ.</td></tr>
+<tr><td><cite class="wcite">[W3]</cite></td><td>ממצא מהאינטרנט הפתוח (שוק/רגולציה/תעשייה) — שכבה נפרדת מהאקדמיה, מסומנת בכתום. לעולם לא מבסס טענה מדעית.</td></tr>
+<tr><td><span class="badge HIGH">HIGH</span></td><td>רמת אמינות המקורות של פרק: HIGH (מקורות מצוטטים היטב/עדכניים) → MODERATE → LIMITED → EMERGING (קדם-פרסומים).</td></tr>
+<tr><td><span class="vlabel na">W-T1</span></td><td>דירוג דומיין למקור web: W-T1 סמכותי (ממשל/תקינה/אקדמיה) · W-T2 עיתונות/אנליסטים · W-T3 כללי.</td></tr>
+<tr><td>✓✓</td><td>ממצא web שאומת מול מקור שני מדומיין אחר (טריאנגולציה).</td></tr>
+<tr><td><b>Scorecard</b></td><td>ציון 0-100 שהמערכת נתנה לעצמה על פי 9 מדדים — כולל אזהרה גלויה כשהציון נמוך מהסף.</td></tr>
+</table>
+<p class="secs">שני מסלולי קריאה: <b>קריאה מהירה</b> — תקציר המנהלים וקופסאות
+"בפשטות" בראש כל פרק; <b>קריאה מלאה</b> — הפרקים, שכבת מחקר העומק ונספחי
+השקיפות.</p>
+</div>"""
+
+
+def build_glossary(state: SurveyState) -> str:
+    if not state.glossary:
+        return ""
+    rows = "".join(
+        f"<tr><td><b>{esc(t['term'])}</b></td><td>{esc(t['definition'])}</td></tr>"
+        for t in state.glossary)
+    return f"""<h2 class="chapter"><span>מילון מונחים</span></h2>
+<div class="transparency"><table>{rows}</table></div>"""
+
+
 def build_executive(state: SurveyState) -> str:
     if not state.executive_summary:
         return ""

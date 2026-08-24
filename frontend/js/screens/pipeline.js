@@ -21,6 +21,7 @@ const STAGE_TITLES = {
   citations: 'ציטוטים',
   visualize: 'גרפים',
   ideation: 'רעיונות',
+  glossary: 'מילון מונחים',
   evaluate: 'הערכה',
   html: 'הרכבת המסמך',
   extras: 'פלטים',
@@ -160,6 +161,11 @@ export async function render(container, { sid, navigate, toast }) {
 
   /* ---------- SSE ---------- */
   const LOG_CLS = { error: 'err', err: 'err', warning: 'warn', warn: 'warn', ok: 'ok', success: 'ok' };
+  // The SSE stream replays history on connect (Last-Event-ID). Historical
+  // gate_reached events must not yank the user away from this screen —
+  // only a gate reached by a LIVE run navigates onward.
+  const mountedAt = Date.now();
+  const isLiveEvent = () => Date.now() - mountedAt > 2000;
   const close = subscribe(sid, {
     stage_started: (d) => {
       logLine('info', `→ stage started: ${d.stage || '?'} (${STAGE_TITLES[d.stage] || ''})`);
@@ -180,6 +186,7 @@ export async function render(container, { sid, navigate, toast }) {
     },
     gate_reached: (d) => {
       logLine('ok', `gate reached: ${d.gate || '?'}`);
+      if (!isLiveEvent()) { refresh(); return; }
       if (d.gate === 'draft') {
         toast('הטיוטה מוכנה לאישור — מעבר לעריכה');
         navigate(`#/s/${sid}/draft`);

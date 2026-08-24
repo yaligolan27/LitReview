@@ -131,6 +131,11 @@ class Settings:
     http_retries: int = 3
     http_timeout: float = 15.0
 
+    # --- Part-E wave 1 (spec §22) ---
+    formula_lint: bool = True        # mathtext parsing of [FORMULA] blocks
+    plain_boxes: bool = True         # chapters open with a "בפשטות" box
+    glossary: bool = True            # auto glossary + reader guide
+
     # --- optional subsystems ---
     semantic_retrieval: bool = False
     semantic_download: bool = False
@@ -187,6 +192,9 @@ class Settings:
             http_cache_ttl=_int("SURVEY_HTTP_CACHE_TTL", 604_800, lo=0),
             http_retries=_int("SURVEY_HTTP_RETRIES", 3, lo=0, hi=10),
             http_timeout=_float("SURVEY_HTTP_TIMEOUT", 15.0),
+            formula_lint=_bool("SURVEY_FORMULA_LINT", True),
+            plain_boxes=_bool("SURVEY_PLAIN_BOXES", True),
+            glossary=_bool("SURVEY_GLOSSARY", True),
             semantic_retrieval=_bool("ENABLE_SEMANTIC_RETRIEVAL", False),
             semantic_download=_bool("ENABLE_SEMANTIC_DOWNLOAD", False),
             semantic_model=_str("SEMANTIC_MODEL", "all-MiniLM-L6-v2"),

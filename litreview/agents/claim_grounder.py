@@ -135,6 +135,29 @@ def _apply_verdicts(sec: SurveySection, claims: list[Claim], verdicts) -> None:
             claim.text = claim.rewrite
 
 
+def _mark_cross_corroborated(sec: SurveySection, claims: list[Claim]) -> None:
+    """Part-E §21.2 signal 9 — deterministic, no network: a supported claim
+    cited by 2+ sources whose author groups are disjoint gets a
+    "cross-corroborated" tag (independent research groups agree)."""
+    for claim in claims:
+        if claim.effective_status() != "supported" or len(claim.citations) < 2:
+            continue
+        author_sets = []
+        for n in claim.citations:
+            if 1 <= n <= len(sec.papers):
+                authors = {a.split(",")[0].strip().lower()
+                           for a in sec.papers[n - 1].authors if a.strip()}
+                if authors:
+                    author_sets.append(authors)
+        for i in range(len(author_sets)):
+            for j in range(i + 1, len(author_sets)):
+                if author_sets[i].isdisjoint(author_sets[j]):
+                    claim.cross_corroborated = True
+                    break
+            if claim.cross_corroborated:
+                break
+
+
 def run_claim_grounder(ctx: RunContext, state: SurveyState,
                        only_sections: list[SurveySection] | None = None) -> SurveyState:
     targets = only_sections if only_sections is not None else state.sections
@@ -153,6 +176,7 @@ def run_claim_grounder(ctx: RunContext, state: SurveyState,
                 ctx.log_line("ground", f"chapter {chapter_no}: unparseable verdicts",
                              level="warn")
             _apply_verdicts(sec, claims, verdicts)
+            _mark_cross_corroborated(sec, claims)
         sec.claims = claims
         sec.stale_grounding = False
 
@@ -182,11 +206,14 @@ def _build_report(state: SurveyState) -> None:
     def pct(n: int) -> float:
         return round(100.0 * n / total, 1) if total else 0.0
 
+    cross = sum(1 for sec in state.sections for c in sec.claims
+                if c.cross_corroborated)
     state.grounding_report = {
         "total_claims": total,
         "supported": supported, "uncertain": uncertain, "unsupported": unsupported,
         "supported_pct": pct(supported), "uncertain_pct": pct(uncertain),
         "unsupported_pct": pct(unsupported),
         "web_claims": web,
+        "cross_corroborated": cross,
         "by_chapter": by_chapter,
     }

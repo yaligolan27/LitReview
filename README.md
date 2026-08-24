@@ -28,6 +28,10 @@ pytest                                   # כל הבדיקות רצות offline 
 
 # הרצת סקר דמו בלי רשת ובלי מודל:
 SURVEY_LLM_BACKEND=mock python run_pipeline.py --config examples/demo_small.json
+
+# אפליקציית ה-Web (דשבורד, שערי אישור, עריכת טיוטה, ייצוא):
+SURVEY_LLM_BACKEND=mock python -m litreview.server --port 8000
+# ואז לגלוש אל http://127.0.0.1:8000
 ```
 
 מצבי LLM (`SURVEY_LLM_BACKEND`): `native` (גשר קבצים מול סשן Claude Code — בלי מפתח,

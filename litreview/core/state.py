@@ -165,6 +165,7 @@ class Claim:
     rewrite: str = ""
     chapter: str = ""
     is_web: bool = False            # cites only [W#] — counted separately
+    cross_corroborated: bool = False   # Part-E: ≥2 disjoint author groups support it
     status_override: dict[str, Any] | None = None   # {value, by, at, reason}
 
     def effective_status(self) -> str:

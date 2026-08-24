@@ -36,7 +36,8 @@ STAGE_TITLES = {
     "write": "כתיבת הפרקים", "ground": "עיגון טענות", "review": "ביקורת",
     "fix_loop": "לולאת תיקון", "executive": "תקציר מנהלים",
     "edit_language": "עריכת לשון", "citations": "סידור ציטוטים",
-    "visualize": "גרפים", "ideation": "רעיונות", "evaluate": "הערכה",
+    "visualize": "גרפים", "ideation": "רעיונות", "glossary": "מילון מונחים",
+    "evaluate": "הערכה",
     "html": "הרכבת המסמך", "extras": "פלטים נוספים",
 }
 

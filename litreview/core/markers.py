@@ -89,6 +89,48 @@ def autofix(text: str) -> str:
     return text
 
 
+_HEBREW_CHARS = re.compile(r"[א-ת]")
+
+
+def lint_formulas(text: str) -> list[LintIssue]:
+    """Part-E §22.1: real LaTeX validation of [FORMULA] blocks.
+
+    Cheap deterministic checks always run (balanced braces, \\left/\\right
+    pairing, no Hebrew inside math — it breaks RTL rendering); when
+    matplotlib is installed its mathtext parser validates the LaTeX itself.
+    A failing formula is an error that sends the chapter back to the writer.
+    """
+    issues: list[LintIssue] = []
+    try:
+        from matplotlib.mathtext import MathTextParser
+        parser: object | None = MathTextParser("agg")
+    except ImportError:
+        parser = None
+
+    for match in re.finditer(r"\[FORMULA\](.*?)\[/FORMULA\]", text, re.DOTALL):
+        latex = match.group(1).strip()
+        label = latex[:40].replace("\n", " ")
+        if latex.count("{") != latex.count("}"):
+            issues.append(LintIssue("error", f"נוסחה עם סוגריים לא מאוזנים: {label}"))
+            continue
+        if len(re.findall(r"\\left\b", latex)) != len(re.findall(r"\\right\b", latex)):
+            issues.append(LintIssue("error", f"נוסחה עם \\left/\\right לא מזווגים: {label}"))
+            continue
+        if _HEBREW_CHARS.search(latex):
+            issues.append(LintIssue("error",
+                                    f"תווים עבריים בתוך נוסחה (שוברים RTL): {label}"))
+            continue
+        if parser is not None:
+            # mathtext does not know \text-style commands — strip them first.
+            cleaned = re.sub(r"\\(?:text|operatorname|mathrm)\{([^{}]*)\}", r"\1", latex)
+            cleaned = cleaned.replace("$", "")
+            try:
+                parser.parse(f"${cleaned}$")  # type: ignore[attr-defined]
+            except Exception:  # noqa: BLE001 - parser raises ValueError subclasses
+                issues.append(LintIssue("error", f"נוסחה שנכשלה בפרסינג LaTeX: {label}"))
+    return issues
+
+
 def marker_census(text: str) -> dict[str, int]:
     """Tag → count, used by the language editor's safety guard."""
     census: dict[str, int] = {}

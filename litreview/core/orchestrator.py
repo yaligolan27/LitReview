@@ -33,6 +33,7 @@ from ..agents.deep_research import run_deep_research
 from ..agents.evaluator import run_evaluator
 from ..agents.executive_translator import run_executive_translator
 from ..agents.exports import run_extras
+from ..agents.glossary import run_glossary
 from ..agents.hebrew_editor import run_hebrew_editor
 from ..agents.html_generator import run_html_generator
 from ..agents.ideation_engine import run_ideation_engine
@@ -182,7 +183,7 @@ SEGMENTS: list[tuple[str, list[str], str | None]] = [
     ("S3_WRITE", ["fulltext", "deep_research", "write", "ground", "review", "fix_loop"],
      GATE_DRAFT),
     ("S4_FINALIZE", ["executive", "edit_language", "citations", "visualize",
-                     "ideation", "evaluate", "html", "extras"], None),
+                     "ideation", "glossary", "evaluate", "html", "extras"], None),
 ]
 
 ALL_STAGE_IDS = [sid for _, ids, _ in SEGMENTS for sid in ids]
@@ -242,6 +243,7 @@ def build_stages(config: dict[str, Any]) -> dict[str, StageSpec]:
         StageSpec("citations", "Citation Manager", run_citation_manager, critical=True),
         StageSpec("visualize", "Visualizer", run_visualizer, critical=False),
         StageSpec("ideation", "Ideation Engine", run_ideation_engine, critical=False),
+        StageSpec("glossary", "Glossary", run_glossary, critical=False),
         StageSpec("evaluate", "Evaluator", run_evaluator, critical=False),
         StageSpec("html", "HTML Generator", run_html_generator, critical=True,
                   validate=val_html),

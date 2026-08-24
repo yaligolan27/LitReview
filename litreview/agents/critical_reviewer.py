@@ -61,7 +61,7 @@ def _shingles(content: str, size: int = 5) -> set[str]:
     return result
 
 
-def review_section(sec: SurveySection) -> list[str]:
+def review_section(sec: SurveySection, settings=None) -> list[str]:
     issues: list[str] = []
 
     unsupported = [c for c in sec.claims if c.effective_status() == "unsupported"]
@@ -106,6 +106,24 @@ def review_section(sec: SurveySection) -> list[str]:
         if issue.level == "error":
             issues.append(f"סמן שבור: {issue.message}")
 
+    # --- Part-E wave 1 (spec §22) -----------------------------------------
+    if settings is None or settings.formula_lint:
+        for issue in markers.lint_formulas(sec.content):
+            issues.append(f"נוסחה פסולה: {issue.message}")
+
+    # Every formula needs a symbol legend ("כאשר:") right after it.
+    for match in re.finditer(r"\[/FORMULA\]", sec.content):
+        window = sec.content[match.end():match.end() + 250]
+        if "כאשר" not in window and "where" not in window.lower():
+            issues.append("נוסחה ללא מקרא סמלים — הוסף שורת \"כאשר:\" אחרי הנוסחה")
+            break
+
+    if settings is not None and settings.plain_boxes:
+        head = sec.content.lstrip()[:200]
+        if not re.match(r"\[CALLOUT:blue\]\s*בפשטות", head):
+            issues.append('חסרה קופסת "בפשטות" בפתיחת הפרק — '
+                          '[CALLOUT:blue]בפשטות: 2-3 משפטים בלי ז\'רגון[/CALLOUT]')
+
     return issues
 
 
@@ -136,7 +154,7 @@ def _cross_chapter_repetitions(state: SurveyState) -> None:
 
 def run_critical_reviewer(ctx: RunContext, state: SurveyState) -> SurveyState:
     for sec in state.sections:
-        sec.issues = review_section(sec)
+        sec.issues = review_section(sec, settings=ctx.settings)
     _cross_chapter_repetitions(state)
     total = sum(len(s.issues) for s in state.sections)
     state.log("review", "critical review complete",

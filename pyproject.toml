@@ -30,6 +30,9 @@ pdf = [
 semantic = [
     "sentence-transformers>=2.6",
 ]
+formula = [
+    "matplotlib>=3.8",
+]
 api = [
     "anthropic>=0.40",
 ]
