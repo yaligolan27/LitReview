@@ -41,6 +41,11 @@ async function request(method, path, body) {
     try { data = JSON.parse(text); } catch { data = text; }
   }
   if (!res.ok) {
+    // M7: session expired / not logged in — send the user to the login page
+    // (never for the auth endpoints themselves, to avoid a redirect loop).
+    if (res.status === 401 && !path.startsWith('/auth/')) {
+      location.href = '/login.html';
+    }
     const detail = (data && typeof data === 'object' && data.detail)
       ? String(data.detail) : `שגיאה ${res.status}`;
     throw { status: res.status, detail, data };

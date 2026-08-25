@@ -138,6 +138,12 @@ def add_operator(request: Request, body: dict):
     return {"operators": _store(request).add_operator(name)}
 
 
+@router.get("/health")
+def health():
+    """Unauthenticated liveness probe for Docker/Render healthchecks (M7)."""
+    return {"ok": True, "version": __version__}
+
+
 @router.get("/meta")
 def meta(request: Request):
     settings = get_settings()

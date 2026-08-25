@@ -8,6 +8,9 @@ dist/
 .venv/
 venv/
 
+# Secrets — the real production config never enters git (.env.example is the template)
+.env
+
 # Runtime state (never commit survey data)
 var/
 outputs/

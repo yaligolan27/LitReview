@@ -115,6 +115,21 @@
   Guardrail-על: תרגום משמש לשאילתות בלבד — שום טקסט במסמך אינו מתורגם אוטומטית,
   וכל מקור עדיין עובר dedup → audit → grounding.
 
+## M7 — פרסום כאתר (אימות + אריזה)
+
+- **אימות בקוד גישה משותף** (`SURVEY_ACCESS_CODE`; ריק = כבוי, כמו כל דגלי
+  המערכת): `server/auth.py` — session בעוגייה חתומה (HMAC נגזר מהקוד ⇒
+  החלפת הקוד מנתקת את כולם), middleware שחוסם API (401) ודפים (redirect
+  ל-`/login.html`), נעילת brute-force פר-IP, ו-`/api/health` פתוח
+  ל-healthchecks. עמוד כניסה עצמאי `frontend/login.html`; ‏`api.js` מפנה
+  ל-login על 401.
+- **אריזה**: `Dockerfile` (התקנה editable כדי ש-`frontend/` יימצא; משתמש
+  לא-root; volume על `/app/var`), ‏`docker-compose.yml`+`Caddyfile`
+  (מסלול VPS עם HTTPS אוטומטי), ‏`render.yaml` (מסלול Render "לחבר
+  GitHub"), ‏`.env.example`, ומדריך מלא ב-`docs/DEPLOY.md` — כולל הסבר
+  מדוע Vercel אינו מתאים (תהליכי רקע ארוכים, SSE ודיסק — לא קיימים במודל
+  serverless).
+
 ## מפת מודולים
 
 ראו את עץ הריפו ב-`README.md`; החוזה REST המלא ב-`docs/API.md`; הוראות

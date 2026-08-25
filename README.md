@@ -39,3 +39,17 @@ SURVEY_LLM_BACKEND=mock python -m litreview.server --port 8000
 `mock` (דטרמיניסטי, לבדיקות), `auto`.
 
 כל דגלי התצורה מרוכזים ב-`litreview/config.py` ומתועדים באפיון §14.
+
+## פרסום כאתר (פרודקשן)
+
+```bash
+# עם קוד גישה — כל האפליקציה דורשת התחברות:
+SURVEY_ACCESS_CODE=long-secret SURVEY_LLM_BACKEND=api ANTHROPIC_API_KEY=... \
+  python -m litreview.server --host 0.0.0.0 --port 8000
+
+# או בקונטיינר (Dockerfile מצורף; volume על /app/var שומר את הסקרים):
+docker compose up -d
+```
+
+המדריך המלא — Render (חינם, "לחבר GitHub"), שרת פרטי עם דומיין ו-HTTPS
+אוטומטי, גיבויים והחלפת קוד — ב-**`docs/DEPLOY.md`**.

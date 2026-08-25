@@ -12,7 +12,7 @@ deliberate and documented inline:
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass
 
 _TRUTHY = {"1", "true", "yes", "on"}
 _FALSY = {"0", "false", "no", "off", ""}
@@ -149,6 +149,9 @@ class Settings:
     ml_db_routing: bool = False          # per-language database routing (OpenAlex language: + maps)
     ml_web: bool = False                 # per-language deep-research rounds
 
+    # --- M7: web publishing (default OFF — empty code disables auth) ---
+    access_code: str = ""                # shared access code; non-empty → login required
+
     # --- optional subsystems ---
     semantic_retrieval: bool = False
     semantic_download: bool = False
@@ -215,6 +218,7 @@ class Settings:
             depth=_str("SURVEY_DEPTH", "standard").lower(),
             ml_db_routing=_bool("SURVEY_ML_DB_ROUTING", False),
             ml_web=_bool("SURVEY_ML_WEB", False),
+            access_code=_str("SURVEY_ACCESS_CODE", ""),
             semantic_retrieval=_bool("ENABLE_SEMANTIC_RETRIEVAL", False),
             semantic_download=_bool("ENABLE_SEMANTIC_DOWNLOAD", False),
             semantic_model=_str("SEMANTIC_MODEL", "all-MiniLM-L6-v2"),

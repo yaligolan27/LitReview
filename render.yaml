@@ -1,0 +1,28 @@
+# Render.com blueprint (M7) — the recommended "connect GitHub and click"
+# path. Free plan runs the full app with two caveats documented in
+# docs/DEPLOY.md: the service sleeps after ~15 idle minutes, and without a
+# paid disk the var/ storage (saved surveys) does NOT survive restarts or
+# redeploys. Upgrading: plan: starter + uncomment the disk block.
+
+services:
+  - type: web
+    name: litreview
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: SURVEY_ACCESS_CODE     # קוד הגישה המשותף — חובה לפני פתיחה לאינטרנט
+        sync: false
+      - key: ANTHROPIC_API_KEY      # נדרש לסקרים אמיתיים (מצב api)
+        sync: false
+      - key: SURVEY_LLM_BACKEND
+        value: api
+      - key: SURVEY_CONTACT_EMAIL   # ה-polite-pool של המאגרים האקדמיים
+        sync: false
+    # --- לשמירת סקרים לאורך זמן (דורש plan בתשלום) ---
+    # plan: starter
+    # disk:
+    #   name: litreview-var
+    #   mountPath: /app/var
+    #   sizeGB: 1
