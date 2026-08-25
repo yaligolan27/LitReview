@@ -4,6 +4,7 @@
 import { api, getOperator, setOperator } from './api.js';
 import * as dashboard from './screens/dashboard.js';
 import * as brief from './screens/brief.js';
+import * as interview from './screens/interview.js';
 import * as toc from './screens/toc.js';
 import * as sources from './screens/sources.js';
 import * as pipeline from './screens/pipeline.js';
@@ -63,6 +64,7 @@ export function ovValue(ov) {
 /* survey status → dashboard badge + best screen to open */
 export const STATUS_META = {
   brief:           { label: '✎ הגדרה',          cls: 'stage',      screen: 'brief' },
+  interviewing:    { label: '🎙 בראיון עומק',   cls: 'stage run',  screen: 'interview' },
   toc_pending:     { label: '☰ תוכן עניינים',   cls: 'stage',      screen: 'toc' },
   collecting:      { label: '🔍 איסוף מקורות',  cls: 'stage run',  screen: 'sources' },
   sources_pending: { label: '📚 אישור מקורות',  cls: 'stage',      screen: 'sources' },
@@ -93,12 +95,13 @@ window.toast = toast;
 /* ================= router ================= */
 
 const SCREENS = {
-  dashboard, brief, toc, sources, pipeline, draft, export: exportScreen,
+  dashboard, brief, interview, toc, sources, pipeline, draft, export: exportScreen,
 };
 
 const CRUMBS = {
   dashboard: ['דשבורד', '— כל הסקרים'],
   brief: ['הגדרת סקר', '— סוכן 1'],
+  interview: ['ראיון עומק', '— חידוד הבריף מול Claude'],
   toc: ['תוכן עניינים', '— סוכן 2 · נקודת אישור'],
   sources: ['מקורות', '— סוכנים 3–4 · נקודת אישור'],
   pipeline: ['ריצת המערכת', '— סוכנים 5–11'],
@@ -108,6 +111,7 @@ const CRUMBS = {
 
 const FLOW = [
   { id: 'brief', n: 'הגדרה' },
+  { id: 'interview', n: 'ראיון עומק' },
   { id: 'toc', n: 'תוכן עניינים', gate: true },
   { id: 'sources', n: 'מקורות', gate: true },
   { id: 'pipeline', n: 'ריצה' },
@@ -117,8 +121,8 @@ const FLOW = [
 
 /* How far along the flow each survey status is (index of first not-done step). */
 const STATUS_STEP = {
-  brief: 0, toc_pending: 1, collecting: 2, sources_pending: 2, writing: 3,
-  draft_pending: 4, finalizing: 5, done: 6, failed: 3, archived: 6,
+  brief: 0, interviewing: 1, toc_pending: 2, collecting: 3, sources_pending: 3,
+  writing: 4, draft_pending: 5, finalizing: 6, done: 7, failed: 4, archived: 7,
 };
 
 let currentSid = '';

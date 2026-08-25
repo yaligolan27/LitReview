@@ -10,6 +10,7 @@
 const EVENT_TYPES = [
   'stage_started', 'progress', 'log', 'stage_done', 'stage_skipped',
   'stage_failed', 'gate_reached', 'run_done', 'run_error',
+  'interview', 'interview_done', 'interview_error',
 ];
 
 export function subscribe(sid, handlers = {}) {

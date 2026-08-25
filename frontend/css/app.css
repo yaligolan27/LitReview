@@ -465,3 +465,14 @@ input[type=checkbox].rowcb{width:17px;height:17px;accent-color:var(--navy-700)}
 .page-head p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
 .toast{position:fixed;bottom:24px;left:24px;background:var(--navy-900);color:#fff;padding:13px 20px;border-radius:12px;box-shadow:var(--shadow-lg);font-size:14px;font-weight:600;z-index:100;opacity:0;transform:translateY(10px);transition:.25s;display:flex;gap:10px;align-items:center;max-width:min(480px,calc(100vw - 48px));pointer-events:none}
 .toast.show{opacity:1;transform:none}
+
+/* ===== deep-interview chat (M8) ===== */
+.chat{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;background:var(--soft)}
+.bubble{max-width:78%;padding:11px 15px;border-radius:14px;font-size:14px;line-height:1.75;white-space:normal;box-shadow:var(--shadow)}
+.bubble.assistant{background:var(--surface);border:1px solid var(--line);align-self:flex-start;border-bottom-right-radius:4px}
+.bubble.user{background:var(--navy-700);color:#fff;align-self:flex-end;border-bottom-left-radius:4px}
+.bubble.typing{color:var(--muted);font-style:italic;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+.chat-input{display:flex;gap:10px;padding:12px 14px;border-top:1px solid var(--line);background:var(--surface);border-radius:0 0 var(--radius) var(--radius)}
+.chat-input textarea{flex:1;resize:vertical;min-height:44px;max-height:180px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;line-height:1.6}
+.chat-input textarea:focus{outline:2px solid var(--blue-600);border-color:transparent}

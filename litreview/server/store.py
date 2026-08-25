@@ -22,8 +22,8 @@ from typing import Any
 from ..core.checkpoints import Checkpointer, RunRecord, atomic_write_json, read_json
 from ..core.state import SurveyState
 
-STATUSES = ("brief", "toc_pending", "collecting", "sources_pending", "writing",
-            "draft_pending", "finalizing", "done", "failed", "archived")
+STATUSES = ("brief", "interviewing", "toc_pending", "collecting", "sources_pending",
+            "writing", "draft_pending", "finalizing", "done", "failed", "archived")
 
 
 def _now() -> str:
@@ -179,6 +179,14 @@ class SurveyStore:
 
     def save_run(self, sid: str, run: RunRecord, v: int | None = None) -> None:
         atomic_write_json(self.vdir(sid, v) / "run.json", run.to_dict())
+
+    def load_interview(self, sid: str, v: int | None = None) -> dict[str, Any]:
+        return read_json(self.vdir(sid, v) / "interview.json") or \
+            {"status": "idle", "messages": [], "charter": None, "applied_fields": []}
+
+    def save_interview(self, sid: str, doc: dict[str, Any],
+                       v: int | None = None) -> None:
+        atomic_write_json(self.vdir(sid, v) / "interview.json", doc)
 
     def load_overlay(self, sid: str, v: int | None = None) -> dict[str, Any]:
         return read_json(self.vdir(sid, v) / "overlay.json") or \

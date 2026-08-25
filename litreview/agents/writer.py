@@ -135,7 +135,11 @@ def build_chapter_prompt(state: SurveyState, entry: TocEntry,
     example_element = (
         "\n- [EXAMPLE]כותרת|הנחות|חישוב|תוצאה[/EXAMPLE] — דוגמה מחושבת "
         "(4 שדות; כל ערך עם [n] או \"להמחשה\")" if practical else "")
-    return f"""כתוב את פרק {chapter_no} בסקירת ספרות אקדמית בעברית בנושא: {state.brief.topic}
+    from .interviewer import charter_prompt_block
+    charter_block = charter_prompt_block(state.brief)
+    if charter_block:
+        charter_block += "\n"
+    return f"""{charter_block}כתוב את פרק {chapter_no} בסקירת ספרות אקדמית בעברית בנושא: {state.brief.topic}
 קהל היעד: {state.brief.audience or 'קוראים מקצועיים'}
 
 כותרת הפרק: {entry.chapter}

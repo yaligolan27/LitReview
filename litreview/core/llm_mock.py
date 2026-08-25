@@ -69,6 +69,39 @@ _WRITER_TEMPLATE = """[CALLOUT:blue]בפשטות: הפרק מסביר מה יד�
 def complete(prompt: str, purpose: str, system: str = "") -> str:
     seed = _seed(prompt)
 
+    if purpose == "interview":
+        # Deterministic interview: opening questions, then follow-ups, and
+        # after two user turns — a saturation hint (exercises the full flow).
+        user_turns = prompt.count("משתמש:")
+        if user_turns == 0:
+            return ("ברוכה הבאה לראיון העומק. כדי שהסקר יהיה מדויק:\n"
+                    "1. מה ההחלטה או התוצר שהסקר הזה אמור לשרת?\n"
+                    "2. אילו 2-3 שאלות חייבות להיענות כדי שיהיה מוצלח?\n"
+                    "3. מי הקורא המרכזי ומה הידע המוקדם שלו?")
+        if user_turns < 2:
+            return ("עד כה הבנתי שמדובר בסקר ממוקד-החלטה. נעמיק:\n"
+                    "1. מה מחוץ לתחום הסקר — ולמה?\n"
+                    "2. יש מאמרים או חוקרים שחובה לכלול?")
+        return ("נראה שהתמונה מלאה — כיסינו מטרה, שאלות, קהל וגבולות. אפשר "
+                "ללחוץ על 'סיים ראיון והפק אמנה', או להוסיף עוד דגשים ואמשיך לשאול.")
+
+    if purpose == "interview_charter":
+        return json.dumps({
+            "charter": ("## אמנת המחקר (מהראיון)\n"
+                        "- מטרה: תמיכה בהחלטה מקצועית על בסיס הספרות.\n"
+                        "- שאלות מרכזיות: מצב הידע, גישות מובילות, פערים.\n"
+                        "- קהל: מקצועי, ללא רקע מתמטי עמוק.\n"
+                        "- דגש: השוואת גישות + מגבלות ראיות."),
+            "search_topic": None,
+            "goals": ["מטרה שחודדה בראיון"],
+            "subtopics_en": ["interview refined subtopic"],
+            "audience": "קהל מקצועי (מהראיון)",
+            "year_from": None, "year_to": None,
+            "languages": [],
+            "must_include_papers": [],
+            "scope_preset": None,
+        }, ensure_ascii=False)
+
     if purpose == "toc_review":
         return "approved"
     if purpose in ("sources_review", "draft_review"):

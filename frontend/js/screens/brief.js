@@ -133,7 +133,8 @@ export async function render(container, { sid, navigate, toast }) {
           <div class="sync-note" id="syncNote">🔄 שינויים נשמרים אוטומטית</div>
           <div style="display:flex;gap:10px">
             <button class="btn" id="saveBtn">שמור טיוטה</button>
-            <button class="btn cta" id="buildBtn">בנה תוכן עניינים ←</button>
+            <button class="btn" id="buildBtn">דלג — בנה תוכן עניינים ←</button>
+            <button class="btn cta" id="interviewBtn">🎙 המשך לראיון עומק (מומלץ)</button>
           </div>
         </div>
       </div>
@@ -142,6 +143,7 @@ export async function render(container, { sid, navigate, toast }) {
         <div class="section-title">🧭 מה קורה בשלב הזה</div>
         <div class="side-list">
           <div class="si"><div class="st">1 · הגדרה</div><div class="sd">הטופס הזה מזין את סוכן תכנון המחקר.</div></div>
+          <div class="si"><div class="st">1.5 · ראיון עומק</div><div class="sd">שיחה פתוחה עם המראיין שמחדדת מטרות, גבולות וקהל — ומפיקה אמנת מחקר מחייבת.</div></div>
           <div class="si"><div class="st">2 · תוכן עניינים</div><div class="sd">ייבנה אוטומטית מהנושא והמטרות — ותוכל לערוך ולאשר.</div></div>
           <div class="si"><div class="st">3 · מקורות</div><div class="sd">חיפוש רב-לשוני במאגרים + ביקורת אמינות (DOI, retraction).</div></div>
           <div class="si"><div class="st">4 · כתיבה והפקה</div><div class="sd">כתיבה מעוגנת-ציטוטים, ביקורת, עריכת לשון וייצוא.</div></div>
@@ -258,6 +260,14 @@ export async function render(container, { sid, navigate, toast }) {
     try { await save(); toast('הטיוטה נשמרה'); } catch { /* toasted in save() */ }
   });
 
+  container.querySelector('#interviewBtn').addEventListener('click', async () => {
+    scheduleSave.cancel();
+    collect();
+    if (!b.topic && !b.search_topic) { toast('הגדר נושא לסקר תחילה', '⚠'); return; }
+    try { await save(); } catch { return; }
+    navigate(`#/s/${sid}/interview`);
+  });
+
   container.querySelector('#buildBtn').addEventListener('click', async () => {
     const btn = container.querySelector('#buildBtn');
     scheduleSave.cancel();
@@ -273,7 +283,7 @@ export async function render(container, { sid, navigate, toast }) {
     } catch (err) {
       toast(err.detail || 'בניית תוכן העניינים נכשלה', '⚠');
       btn.disabled = false;
-      btn.textContent = 'בנה תוכן עניינים ←';
+      btn.textContent = 'דלג — בנה תוכן עניינים ←';
     }
   });
 

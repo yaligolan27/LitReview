@@ -180,6 +180,61 @@ def put_brief(request: Request, sid: str, body: dict):
 
 
 # ---------------------------------------------------------------------------
+# Deep interview (M8) — the method stage between the brief and the TOC
+# ---------------------------------------------------------------------------
+
+_INTERVIEW_OPEN_STATUSES = ("brief", "interviewing", "toc_pending")
+
+
+def _interview_guard(store: SurveyStore, jobs: JobRunner, sid: str) -> None:
+    _manifest_or_404(store, sid)
+    if store.status(sid) not in _INTERVIEW_OPEN_STATUSES:
+        raise HTTPException(409, "הראיון זמין רק לפני אישור המקורות — פתח גרסה חדשה כדי לראיין מחדש")
+    if jobs.is_running(sid):
+        raise HTTPException(409, "פעולה אחרת רצה על הסקר — המתן לסיומה")
+
+
+@router.get("/surveys/{sid}/interview")
+def get_interview(request: Request, sid: str):
+    store, jobs = _store(request), _jobs(request)
+    _manifest_or_404(store, sid)
+    doc = store.load_interview(sid)
+    return {**doc, "busy": jobs.is_running(sid)}
+
+
+@router.post("/surveys/{sid}/interview/start")
+def start_interview(request: Request, sid: str):
+    store, jobs = _store(request), _jobs(request)
+    _interview_guard(store, jobs, sid)
+    if not jobs.interview(sid, "start"):
+        raise HTTPException(409, "פעולה אחרת רצה על הסקר")
+    return {"job": "started"}
+
+
+@router.post("/surveys/{sid}/interview/message")
+def interview_message(request: Request, sid: str, body: dict):
+    store, jobs = _store(request), _jobs(request)
+    _interview_guard(store, jobs, sid)
+    text = str((body or {}).get("text", "")).strip()
+    if not text:
+        raise HTTPException(422, "הודעה ריקה")
+    if not jobs.interview(sid, "message", text):
+        raise HTTPException(409, "פעולה אחרת רצה על הסקר")
+    return {"job": "started"}
+
+
+@router.post("/surveys/{sid}/interview/finish")
+def finish_interview(request: Request, sid: str):
+    store, jobs = _store(request), _jobs(request)
+    _interview_guard(store, jobs, sid)
+    if not store.load_interview(sid)["messages"]:
+        raise HTTPException(409, "אין עדיין ראיון לסכם — התחל בשיחה")
+    if not jobs.interview(sid, "finish"):
+        raise HTTPException(409, "פעולה אחרת רצה על הסקר")
+    return {"job": "started"}
+
+
+# ---------------------------------------------------------------------------
 # TOC (gate 1)
 # ---------------------------------------------------------------------------
 

@@ -52,6 +52,10 @@ class ResearchBrief:
     scope_target_pages: int | None = None
     output_slides: bool = False
     output_podcast: bool = False
+    # M8: the research charter distilled from the deep interview — a rich
+    # markdown digest of what the user actually wants. Injected into the
+    # planner/writer/deep-research prompts; empty = no interview held.
+    charter: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

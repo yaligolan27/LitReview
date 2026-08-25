@@ -162,7 +162,13 @@ def clean_finding(raw: dict) -> dict | None:
 
 def _plan(ctx: RunContext, state: SurveyState) -> dict:
     brief = state.brief
+    charter = ""
+    if brief.charter:
+        # M8: the interview charter steers what the web research chases.
+        charter = ("אמנת המחקר מהראיון עם המשתמש (מחייב — גזור ממנה את "
+                   f"תתי-השאלות):\n{brief.charter[:1500]}\n\n")
     prompt = (
+        f"{charter}"
         f"נושא הסקר: {brief.topic} ({brief.search_topic})\n"
         f"מטרות: {', '.join(brief.goals)}\n"
         f"תתי-נושאים: {', '.join(brief.subtopics)}\n\n"

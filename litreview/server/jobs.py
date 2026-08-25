@@ -10,15 +10,14 @@ from __future__ import annotations
 
 import threading
 from datetime import datetime, timezone
-from typing import Any
 
-from ..agents import claim_grounder, critical_reviewer, writer
+from ..agents import claim_grounder, critical_reviewer, interviewer, writer
 from ..config import get_settings
 from ..core import orchestrator
 from ..core.checkpoints import RunRecord
 from ..core.context import RunContext
 from ..core.llm import LLM
-from ..core.state import SurveyState
+from ..core.state import ResearchBrief, SurveyState
 from .sse import EventBus
 from .store import SurveyStore
 
@@ -112,6 +111,58 @@ class JobRunner:
         elif outcome.startswith("paused:"):
             gate = outcome.split(":", 1)[1]
             self.store.set_status(sid, f"{gate}_pending")
+
+    # --- deep-interview job (M8) ------------------------------------------
+    # Interview turns run through the same one-thread-per-survey slot as
+    # pipeline jobs, so a turn and a run can never collide on the bridge.
+
+    def interview(self, sid: str, action: str, text: str = "") -> bool:
+        with self._lock:
+            if self.is_running(sid):
+                return False
+            thread = threading.Thread(target=self._run_interview,
+                                      args=(sid, action, text), daemon=True)
+            self._threads[sid] = thread
+            thread.start()
+            return True
+
+    def _run_interview(self, sid: str, action: str, text: str) -> None:
+        ctx = self._context(sid)
+        doc = self.store.load_interview(sid)
+        brief = ResearchBrief.from_dict(self.store.load_brief(sid) or {})
+        try:
+            if action == "message" and text.strip():
+                doc["messages"].append({"role": "user", "text": text.strip(),
+                                        "at": _now()})
+                doc["status"] = "active"
+                self.store.save_interview(sid, doc)
+
+            if action == "finish":
+                charter = interviewer.build_charter(ctx, brief, doc["messages"])
+                brief_doc = self.store.load_brief(sid) or {}
+                changed = interviewer.apply_charter(brief_doc, charter)
+                self.store.save_brief(sid, brief_doc)
+                doc["status"] = "done"
+                doc["charter"] = charter
+                doc["applied_fields"] = changed
+                self.store.save_interview(sid, doc)
+                self.store.set_status(sid, "brief")
+                ctx.emitter.emit("interview_done", applied_fields=changed,
+                                 charter=str(charter.get("charter", "")))
+                return
+
+            # "start" on an empty transcript, or the reply to a new message.
+            if action == "start" and doc["messages"]:
+                return                          # idempotent — already opened
+            reply = interviewer.next_turn(ctx, brief, doc["messages"])
+            doc["messages"].append({"role": "assistant", "text": reply, "at": _now()})
+            doc["status"] = "active"
+            self.store.save_interview(sid, doc)
+            if self.store.status(sid) == "brief":
+                self.store.set_status(sid, "interviewing")
+            ctx.emitter.emit("interview", role="assistant", text=reply)
+        except Exception as exc:  # noqa: BLE001 — surface to the chat, never crash
+            ctx.emitter.emit("interview_error", message=str(exc))
 
     # --- rewrite job -------------------------------------------------------
 
