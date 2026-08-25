@@ -160,3 +160,19 @@ def test_operators_and_meta(client):
     assert "אבי" in ops
     meta = client.get("/api/meta").json()
     assert meta["backend"] == "mock"
+
+
+def test_run_reports_backend_and_bridge_dir(client):
+    """The pipeline screen's native-bridge panel keys off these two fields
+    (personal mode: a Claude Code session serves the bridge, no API key)."""
+    sid = client.post("/api/surveys", json={"operator": "נועה"}).json()["id"]
+    # Before any run: backend falls back to the live settings (mock in tests).
+    run = client.get(f"/api/surveys/{sid}/run").json()
+    assert run["backend"] == "mock"
+    assert run["bridge_dir"] == ""
+    # After the first job, the run record pins the backend + its bridge dir.
+    client.put(f"/api/surveys/{sid}/brief", json=BRIEF)
+    client.post(f"/api/surveys/{sid}/toc/build")
+    run = client.get(f"/api/surveys/{sid}/run").json()
+    assert run["backend"] == "mock"
+    assert run["bridge_dir"].endswith("bridge")

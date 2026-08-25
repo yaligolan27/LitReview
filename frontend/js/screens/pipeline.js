@@ -65,6 +65,8 @@ export async function render(container, { sid, navigate, toast }) {
       <div class="progress"><span id="overallBar" style="width:0%"></span></div>
     </div>
 
+    <div id="bridgePanel"></div>
+
     <div class="run-grid">
       <div class="card stepper" id="stepper"></div>
       <div>
@@ -91,8 +93,51 @@ export async function render(container, { sid, navigate, toast }) {
   }
   logLine('info', 'connected — waiting for pipeline events…');
 
+  /* ---------- native-bridge panel ----------
+   * Personal mode (a Claude subscription, no API key): the pipeline waits
+   * for a Claude Code session to serve the file bridge. Surface the bridge
+   * dir and a copy-paste serving command right where the user is watching. */
+  function renderBridgePanel() {
+    const panel = container.querySelector('#bridgePanel');
+    if ((run.backend || '') !== 'native') { panel.innerHTML = ''; return; }
+    const dir = run.bridge_dir || '';
+    const cmd = dir
+      ? `claude "קרא את SKILL.md בשורש הריפו ושרת את גשר הקבצים בתיקייה ${dir} — עני על כל בקשה לפי הכללים, עד שהריצה מסתיימת"`
+      : '';
+    panel.innerHTML = `
+      <div class="card panel" style="margin-bottom:22px;border-inline-start:4px solid var(--blue-600)">
+        <div style="font-weight:800;color:var(--navy-700);margin-bottom:6px">🔌 מצב native — הצינור מופעל על ידי סשן Claude Code</div>
+        <div style="font-size:13.5px;color:var(--muted);line-height:1.7">
+          הריצה לא צורכת API: היא כותבת בקשות לתיקיית הגשר וממתינה שסשן
+          Claude Code (על המנוי שלך) יענה עליהן. פתחי טרמינל בתיקיית הפרויקט
+          והדביקי את הפקודה:
+        </div>
+        ${dir ? `
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+          <code id="bridgeCmd" style="flex:1;direction:ltr;text-align:left;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;overflow-x:auto;white-space:nowrap">${esc(cmd)}</code>
+          <button class="btn" id="copyBridge" title="העתקה">📋</button>
+        </div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:6px">תיקיית הגשר: <code style="direction:ltr;unicode-bidi:embed">${esc(dir)}</code></div>
+        ` : `
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">תיקיית הגשר תופיע כאן ברגע שהריצה תתחיל.</div>
+        `}
+      </div>`;
+    const copyBtn = panel.querySelector('#copyBridge');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(cmd);
+          toast('הפקודה הועתקה');
+        } catch {
+          toast('העתקה נחסמה — סמני את הטקסט ידנית', '⚠');
+        }
+      });
+    }
+  }
+
   /* ---------- stepper + progress ---------- */
   function renderRun() {
+    renderBridgePanel();
     const stages = run.stages || [];
     if (!stages.length) {
       stepper.innerHTML = `<div class="empty" style="padding:28px 18px">

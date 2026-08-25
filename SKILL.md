@@ -16,6 +16,18 @@ python run_pipeline.py --config examples/demo_survey.json --workdir var/runs/myr
 
 הצינור רץ ברקע; אתה משרת את הגשר עד שמודפס "✅ הסקר הושלם".
 
+### שירות מתוך אפליקציית ה-Web (שימוש אישי על מנוי Claude)
+
+כשהסקר רץ מהדפדפן (`SURVEY_LLM_BACKEND=native python -m litreview.server`),
+תיקיית הגשר היא לכל ריצה `var/surveys/<sid>/v<N>/bridge/` — מסך "ריצת
+המערכת" מציג אותה יחד עם פקודת שירות מוכנה להעתקה. שני הבדלים מהמצב של
+ה-CLI:
+
+- **שערי האישור (TOC/מקורות/טיוטה) מטופלים בדפדפן**, לא דרך הגשר — לכן
+  purposes של `*_review` לא יגיעו אליך; ענה רק על בקשות התוכן.
+- עבוד תמיד עם הנתיב המלא שבשדה `response_file` של כל בקשה — אל תסתמך על
+  תיקיית העבודה של ה-shell.
+
 ## לולאת השירות
 
 1. קרא קובץ `<BRIDGE_DIR>/req_*.json` שאין לו עדיין `resp_*.done`.
