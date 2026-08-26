@@ -1,8 +1,9 @@
-/* Screen 1.5 — Deep Interview (M8): an open-ended chat with the interviewer
- * before the pipeline runs. Turns go through the LLM gateway (in native mode
- * — the user's own Claude Code session serves them via the bridge). Finishing
- * distills a research charter that is merged into the brief and steers every
- * later stage. */
+/* Screen 1.5 — Deep Interview (M8): a survey-style chat before the pipeline
+ * runs. Each interviewer turn arrives as structured questions with prepared
+ * clickable options (+ optional free-text detail per question); the user can
+ * also just type freely. Turns go through the LLM gateway (native mode: the
+ * user's own Claude Code session serves them via the bridge). Finishing
+ * distills a research charter that is merged into the brief. */
 
 import { api } from '../api.js';
 import { subscribe } from '../sse.js';
@@ -12,8 +13,8 @@ export async function render(container, { sid, navigate, toast }) {
   container.innerHTML = `
     <div class="page-head">
       <div><h1>🎙 ראיון עומק</h1>
-        <p>ככל שתספרי יותר — הסקר יהיה מדויק יותר. אין הגבלת זמן: המראיין
-        ישאל, יעמיק ויסכם, ובסיום תופק "אמנת מחקר" שתנחה את כל שלבי הכתיבה.</p></div>
+        <p>המראיין מציג שאלות עם אפשרויות מוכנות — פשוט ללחוץ, ואפשר תמיד לפרט
+        חופשי. אין הגבלת זמן; בסיום מופקת "אמנת מחקר" שמנחה את כל שלבי הכתיבה.</p></div>
       <div style="display:flex;gap:10px">
         <button class="btn" id="skipBtn">דלג לתוכן עניינים</button>
         <button class="btn cta" id="finishBtn">✔ סיים ראיון והפק אמנה</button>
@@ -22,10 +23,10 @@ export async function render(container, { sid, navigate, toast }) {
 
     <div id="bridgeHint"></div>
 
-    <div class="card panel" style="padding:0;display:flex;flex-direction:column;height:min(62vh,640px)">
+    <div class="card panel" style="padding:0;display:flex;flex-direction:column;height:min(66vh,700px)">
       <div class="chat" id="chat"></div>
       <div class="chat-input">
-        <textarea id="msgBox" rows="2" placeholder="כתבי תשובה חופשית — אפשר באריכות…"></textarea>
+        <textarea id="msgBox" rows="2" placeholder="או כתבי חופשי — תשובה, הרחבה או כל דבר שחשוב שנדע…"></textarea>
         <button class="btn cta" id="sendBtn">שלח ↵</button>
       </div>
     </div>
@@ -37,6 +38,7 @@ export async function render(container, { sid, navigate, toast }) {
   const sendBtn = container.querySelector('#sendBtn');
   const finishBtn = container.querySelector('#finishBtn');
   let waiting = false;
+  let activeCard = null;      // the current interactive survey card, if any
 
   /* ---------- bridge hint (native mode) ---------- */
   try {
@@ -52,13 +54,96 @@ export async function render(container, { sid, navigate, toast }) {
     }
   } catch { /* hint is optional */ }
 
-  /* ---------- chat rendering ---------- */
+  /* ---------- rendering ---------- */
   function bubble(role, text) {
     const div = document.createElement('div');
     div.className = `bubble ${role === 'user' ? 'user' : 'assistant'}`;
     div.innerHTML = esc(text).replace(/\n/g, '<br>');
     chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
+  /* An answered/superseded survey card collapses to its plain-text form. */
+  function freezeActiveCard() {
+    if (!activeCard) return;
+    const text = activeCard.dataset.plain || '';
+    const plain = document.createElement('div');
+    plain.className = 'bubble assistant';
+    plain.innerHTML = esc(text).replace(/\n/g, '<br>');
+    activeCard.replaceWith(plain);
+    activeCard = null;
+  }
+
+  function surveyCard(message) {
+    const turn = message.turn;
+    const card = document.createElement('div');
+    card.className = 'survey-card';
+    card.dataset.plain = message.text || '';
+    let html = '';
+    if (turn.intro) html += `<div class="sv-intro">${esc(turn.intro)}</div>`;
+    turn.questions.forEach((q, qi) => {
+      const chips = (q.options || []).map((o, oi) =>
+        `<button type="button" class="chip" data-q="${qi}" data-o="${oi}">${esc(o)}</button>`).join('');
+      html += `
+        <div class="q-block" data-multi="${q.multi ? 1 : 0}" data-qi="${qi}">
+          <div class="q-text">${qi + 1}. ${esc(q.text)}${q.multi ? ' <span class="q-hint">(אפשר לבחור כמה)</span>' : ''}</div>
+          <div class="chips">${chips}</div>
+          ${q.allow_other ? `<input class="input other-input" data-q="${qi}" placeholder="אחר / פירוט חופשי (לא חובה)…">` : ''}
+        </div>`;
+    });
+    if (turn.done_hint) {
+      html += `<div class="sv-done">✔ נראה שהתמונה מלאה — אפשר ללחוץ "סיים ראיון והפק אמנה", או להמשיך להוסיף.</div>`;
+    }
+    if (turn.questions.length) {
+      html += `<button class="btn cta sv-send" type="button">שלח תשובות ←</button>`;
+    }
+    card.innerHTML = html;
+
+    card.querySelectorAll('.chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const block = chip.closest('.q-block');
+        if (block.dataset.multi !== '1') {
+          block.querySelectorAll('.chip.sel').forEach((c) => { if (c !== chip) c.classList.remove('sel'); });
+        }
+        chip.classList.toggle('sel');
+      });
+    });
+
+    const sendAnswers = card.querySelector('.sv-send');
+    if (sendAnswers) {
+      sendAnswers.addEventListener('click', () => {
+        const parts = [];
+        turn.questions.forEach((q, qi) => {
+          const block = card.querySelector(`.q-block[data-qi="${qi}"]`);
+          const picked = [...block.querySelectorAll('.chip.sel')].map((c) => c.textContent.trim());
+          const other = (block.querySelector('.other-input') || {}).value || '';
+          if (!picked.length && !other.trim()) return;
+          let line = `${q.text}\n← ${picked.join(', ') || '—'}`;
+          if (other.trim()) line += `${picked.length ? ' · ' : ''}פירוט: ${other.trim()}`;
+          parts.push(line);
+        });
+        if (!parts.length) { toast('בחרי לפחות תשובה אחת או כתבי פירוט', 'ℹ'); return; }
+        sendText(parts.join('\n\n'));
+      });
+    }
+    chat.appendChild(card);
+    chat.scrollTop = chat.scrollHeight;
+    return card;
+  }
+
+  function renderMessage(m, interactive) {
+    if (m.role === 'assistant' && interactive && m.turn && m.turn.questions
+        && m.turn.questions.length) {
+      freezeActiveCard();
+      activeCard = surveyCard(m);
+    } else if (m.role === 'assistant' && m.turn && !m.turn.questions.length
+               && interactive) {
+      // A question-less turn (e.g. saturation hint) — plain bubble is right.
+      bubble('assistant', m.text);
+    } else {
+      bubble(m.role, m.text);
+    }
   }
 
   function setWaiting(on, label = 'המראיין חושב…') {
@@ -99,7 +184,9 @@ export async function render(container, { sid, navigate, toast }) {
   try { doc = await api.get(`/surveys/${sid}/interview`); } catch (err) {
     toast(err.detail || 'טעינת הראיון נכשלה', '⚠');
   }
-  doc.messages.forEach((m) => bubble(m.role, m.text));
+  doc.messages.forEach((m, i) => {
+    renderMessage(m, i === doc.messages.length - 1 && doc.status !== 'done');
+  });
   let rendered = doc.messages.length;   // idempotency cursor (SSE replays history)
 
   /* Re-sync from server state — safe under SSE replays and duplicates. */
@@ -107,11 +194,13 @@ export async function render(container, { sid, navigate, toast }) {
     let d;
     try { d = await api.get(`/surveys/${sid}/interview`); } catch { return; }
     for (let i = rendered; i < d.messages.length; i++) {
-      bubble(d.messages[i].role, d.messages[i].text);
+      renderMessage(d.messages[i],
+        i === d.messages.length - 1 && d.status !== 'done');
     }
     rendered = Math.max(rendered, d.messages.length);
     if (!d.busy) setWaiting(false);
     if (d.status === 'done' && d.charter) {
+      freezeActiveCard();
       renderCharter(d.charter.charter, d.applied_fields);
     }
   }
@@ -129,12 +218,12 @@ export async function render(container, { sid, navigate, toast }) {
   }
 
   /* ---------- send / finish ---------- */
-  async function send() {
-    const text = msgBox.value.trim();
+  async function sendText(text) {
     if (!text || waiting) return;
     setWaiting(true);
     try {
       await api.post(`/surveys/${sid}/interview/message`, { text });
+      freezeActiveCard();               // the questions were answered
       bubble('user', text);
       rendered += 1;                    // the server appends this same message
       msgBox.value = '';
@@ -144,9 +233,9 @@ export async function render(container, { sid, navigate, toast }) {
       toast(err.detail || 'שליחה נכשלה', '⚠');
     }
   }
-  sendBtn.addEventListener('click', send);
+  sendBtn.addEventListener('click', () => sendText(msgBox.value.trim()));
   msgBox.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(msgBox.value.trim()); }
   });
 
   finishBtn.addEventListener('click', async () => {

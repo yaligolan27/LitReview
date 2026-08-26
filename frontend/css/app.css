@@ -476,3 +476,18 @@ input[type=checkbox].rowcb{width:17px;height:17px;accent-color:var(--navy-700)}
 .chat-input{display:flex;gap:10px;padding:12px 14px;border-top:1px solid var(--line);background:var(--surface);border-radius:0 0 var(--radius) var(--radius)}
 .chat-input textarea{flex:1;resize:vertical;min-height:44px;max-height:180px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;line-height:1.6}
 .chat-input textarea:focus{outline:2px solid var(--blue-600);border-color:transparent}
+
+/* ===== survey-style interview turns ===== */
+.survey-card{align-self:stretch;max-width:92%;background:var(--surface);border:1px solid var(--line);border-radius:14px;border-bottom-right-radius:4px;padding:16px 18px;box-shadow:var(--shadow)}
+.survey-card .sv-intro{font-size:14px;margin-bottom:12px;color:var(--ink)}
+.survey-card .q-block{margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+.survey-card .q-block:last-of-type{border-bottom:0}
+.survey-card .q-text{font-weight:700;font-size:14px;color:var(--navy-900);margin-bottom:8px}
+.survey-card .q-hint{font-weight:400;font-size:12px;color:var(--muted)}
+.survey-card .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.survey-card .chip{border:1.5px solid var(--line);background:var(--soft);color:var(--ink);border-radius:999px;padding:7px 14px;font-size:13.5px;font-weight:600;transition:.15s}
+.survey-card .chip:hover{border-color:var(--blue-600);color:var(--blue-600)}
+.survey-card .chip.sel{background:var(--navy-700);border-color:var(--navy-700);color:#fff}
+.survey-card .other-input{width:100%;font-size:13px;padding:8px 12px}
+.survey-card .sv-send{margin-top:4px}
+.survey-card .sv-done{background:#e7f4ec;color:#22543d;border-radius:10px;padding:9px 13px;font-size:13.5px;font-weight:600;margin:6px 0 10px}

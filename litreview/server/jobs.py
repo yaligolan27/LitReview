@@ -154,13 +154,17 @@ class JobRunner:
             # "start" on an empty transcript, or the reply to a new message.
             if action == "start" and doc["messages"]:
                 return                          # idempotent — already opened
-            reply = interviewer.next_turn(ctx, brief, doc["messages"])
-            doc["messages"].append({"role": "assistant", "text": reply, "at": _now()})
+            turn = interviewer.next_turn(ctx, brief, doc["messages"])
+            text = interviewer.turn_to_text(turn)
+            # `text` keeps the transcript/charter plain-text; `turn` carries
+            # the survey-style structure (clickable options) for the UI.
+            doc["messages"].append({"role": "assistant", "text": text,
+                                    "turn": turn, "at": _now()})
             doc["status"] = "active"
             self.store.save_interview(sid, doc)
             if self.store.status(sid) == "brief":
                 self.store.set_status(sid, "interviewing")
-            ctx.emitter.emit("interview", role="assistant", text=reply)
+            ctx.emitter.emit("interview", role="assistant", text=text)
         except Exception as exc:  # noqa: BLE001 — surface to the chat, never crash
             ctx.emitter.emit("interview_error", message=str(exc))
 

@@ -26,8 +26,8 @@ class Purpose:
 
 _REGISTRY: list[Purpose] = [
     # --- deep interview (M8) ---
-    Purpose("interview", max_tokens=2500, temperature=0.6,
-            description="One interviewer turn: probing questions in Hebrew, plain text"),
+    Purpose("interview", json_response=True, max_tokens=2500, temperature=0.6,
+            description="One survey-style interviewer turn: {intro, questions[{text,options,multi,allow_other}], done_hint}"),
     Purpose("interview_charter", json_response=True, max_tokens=3500,
             description="Distill the interview into a research charter JSON"),
     # --- orchestration / gates ---

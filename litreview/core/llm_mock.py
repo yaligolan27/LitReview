@@ -70,20 +70,43 @@ def complete(prompt: str, purpose: str, system: str = "") -> str:
     seed = _seed(prompt)
 
     if purpose == "interview":
-        # Deterministic interview: opening questions, then follow-ups, and
-        # after two user turns — a saturation hint (exercises the full flow).
+        # Deterministic survey-style interview: opening options-questions,
+        # then a follow-up turn, then a saturation hint (done_hint).
         user_turns = prompt.count("משתמש:")
         if user_turns == 0:
-            return ("ברוכה הבאה לראיון העומק. כדי שהסקר יהיה מדויק:\n"
-                    "1. מה ההחלטה או התוצר שהסקר הזה אמור לשרת?\n"
-                    "2. אילו 2-3 שאלות חייבות להיענות כדי שיהיה מוצלח?\n"
-                    "3. מי הקורא המרכזי ומה הידע המוקדם שלו?")
+            return json.dumps({
+                "intro": "ברוכה הבאה לראיון העומק. כדי שהסקר יהיה מדויק — כמה שאלות פתיחה:",
+                "questions": [
+                    {"text": "מה ההחלטה או התוצר שהסקר אמור לשרת?",
+                     "options": ["החלטת פיתוח/רכש", "בסיס למחקר אקדמי",
+                                 "מסמך מדיניות", "למידה אישית מעמיקה"],
+                     "multi": False, "allow_other": True},
+                    {"text": "מי הקורא המרכזי?",
+                     "options": ["מהנדסים/אנשי מקצוע", "חוקרים אקדמיים",
+                                 "מקבלי החלטות ללא רקע טכני"],
+                     "multi": True, "allow_other": True},
+                ],
+                "done_hint": False,
+            }, ensure_ascii=False)
         if user_turns < 2:
-            return ("עד כה הבנתי שמדובר בסקר ממוקד-החלטה. נעמיק:\n"
-                    "1. מה מחוץ לתחום הסקר — ולמה?\n"
-                    "2. יש מאמרים או חוקרים שחובה לכלול?")
-        return ("נראה שהתמונה מלאה — כיסינו מטרה, שאלות, קהל וגבולות. אפשר "
-                "ללחוץ על 'סיים ראיון והפק אמנה', או להוסיף עוד דגשים ואמשיך לשאול.")
+            return json.dumps({
+                "intro": "עד כה הבנתי שמדובר בסקר ממוקד-החלטה. נעמיק:",
+                "questions": [
+                    {"text": "מה מחוץ לתחום הסקר?",
+                     "options": ["היבטים משפטיים", "היסטוריה מוקדמת",
+                                 "יישומים צבאיים"],
+                     "multi": True, "allow_other": True},
+                    {"text": "יש מקורות שחובה לכלול?",
+                     "options": ["כן — אפרט", "אין כאלה", "לא בטוחה"],
+                     "multi": False, "allow_other": True},
+                ],
+                "done_hint": False,
+            }, ensure_ascii=False)
+        return json.dumps({
+            "intro": "נראה שהתמונה מלאה — כיסינו מטרה, שאלות, קהל וגבולות.",
+            "questions": [],
+            "done_hint": True,
+        }, ensure_ascii=False)
 
     if purpose == "interview_charter":
         return json.dumps({

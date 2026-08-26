@@ -90,6 +90,37 @@ def test_interview_blocked_after_sources_approved(client):
     assert client.post(f"/api/surveys/{sid}/interview/start").status_code == 409
 
 
+# --- survey-style turns (v2) ------------------------------------------------
+
+def test_turns_carry_clickable_options(client):
+    sid = _new_survey(client)
+    client.post(f"/api/surveys/{sid}/interview/start")
+    doc = _wait_idle(client, sid)
+    turn = doc["messages"][0]["turn"]
+    assert turn["questions"], "opening turn must carry prepared questions"
+    first = turn["questions"][0]
+    assert len(first["options"]) >= 3          # ready-made clickable options
+    assert first["allow_other"] is True        # free-text detail stays possible
+    # The plain-text form lists the options too (transcript context).
+    assert "אפשרויות:" in doc["messages"][0]["text"]
+
+
+def test_normalize_turn_falls_back_to_plain_text():
+    from litreview.agents.interviewer import normalize_turn
+    # A serving session answering free-form still works (no options, intro only).
+    turn = normalize_turn("שאלה חופשית: מה חשוב לך בסקר?")
+    assert turn["questions"] == []
+    assert "מה חשוב לך" in turn["intro"]
+    # Malformed question entries are dropped; valid ones normalized.
+    turn = normalize_turn('{"intro": "היי", "questions": [{"text": "שאלה?", '
+                          '"options": ["א", "ב", ""], "multi": true}, {"oops": 1}], '
+                          '"done_hint": true}')
+    assert len(turn["questions"]) == 1
+    assert turn["questions"][0]["options"] == ["א", "ב"]
+    assert turn["questions"][0]["multi"] is True
+    assert turn["done_hint"] is True
+
+
 # --- unit: charter merge + prompt injection ---------------------------------
 
 def test_apply_charter_merges_non_destructively():

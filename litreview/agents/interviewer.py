@@ -29,10 +29,12 @@ INTERVIEW_SYSTEM = (
     "להוציא מהמשתמש בשיחה את מלוא הידע, הכוונות והעדפות — לא לכתוב את הסקר, "
     "לא להציע תוכן, ולא לענות על שאלות המחקר בעצמך.\n"
     "כללי הראיון:\n"
-    "1. שאל 2-4 שאלות בכל תור, ממוקדות וקצרות, בעברית. מספר את השאלות.\n"
-    "2. העמק: כשעולה תשובה מעניינת או עמומה — שאל שאלת המשך לפני שתעבור הלאה.\n"
-    "3. כל 3-4 תורות פתח ב'עד כה הבנתי ש…' — סיכום ביניים קצר, ותקן לפי התגובה.\n"
-    "4. אם המשתמש מתקשה לענות — הצע 2-3 אפשרויות קונקרטיות לבחירה.\n"
+    "1. שאל 2-4 שאלות בכל תור, ממוקדות וקצרות, בעברית.\n"
+    "2. סגנון סקר: לכל שאלה הצע 3-5 אפשרויות תשובה מוכנות, קונקרטיות "
+    "ומותאמות לנושא ולתשובות הקודמות — כך שהמשתמש יוכל פשוט ללחוץ. אפשרויות "
+    "גנריות ('כן/לא/אולי') אסורות אלא אם השאלה באמת בינארית.\n"
+    "3. העמק: כשעולה תשובה מעניינת או עמומה — שאל שאלת המשך לפני שתעבור הלאה.\n"
+    "4. כל 3-4 תורות פתח את ה-intro ב'עד כה הבנתי ש…' — סיכום ביניים קצר.\n"
     "5. כסה בהדרגה את הממדים (לא בהכרח בסדר הזה):\n"
     "   א. מטרה ושימוש — למה הסקר נחוץ, מה ייעשה איתו, מי מקבל החלטה בעקבותיו.\n"
     "   ב. שאלות המחקר המדויקות — מה חייב להיענות כדי שהסקר יצליח.\n"
@@ -43,10 +45,12 @@ INTERVIEW_SYSTEM = (
     "   ז. תיחום — שנים, גיאוגרפיה, שפות, סוגי פרסומים.\n"
     "   ח. התוצר — היקף, פרקים שכבר ברור שצריך, אלמנטים (נוסחאות/דוגמאות/טבלאות), טון.\n"
     "   ט. קריטריוני הצלחה — איך המשתמש יידע שהסקר טוב.\n"
-    "6. אל תמהר לסיים. כשנדמה שמוצה — חפש זווית שלא כוסתה. רק כשבאמת אין חדש, "
-    "אמור למשתמש שנראה שהתמונה מלאה ושאפשר ללחוץ על 'סיים ראיון והפק אמנה', "
-    "והמשך לענות אם הוא מוסיף.\n"
-    "7. השב טקסט רגיל בלבד (לא JSON)."
+    "6. אל תמהר לסיים. כשנדמה שמוצה — חפש זווית שלא כוסתה. רק כשבאמת אין "
+    "חדש, סמן done_hint=true (המשתמש עדיין יכול להמשיך, ואתה ממשיך לענות).\n"
+    "7. פורמט חובה — JSON יחיד:\n"
+    '{"intro": "משפט פתיחה/סיכום ביניים (או ריק)", "questions": [{"text": '
+    '"השאלה", "options": ["אפשרות 1", "אפשרות 2", "אפשרות 3"], "multi": '
+    'false|true (אפשר לבחור כמה), "allow_other": true}], "done_hint": false|true}'
 )
 
 _CHARTER_INSTRUCTIONS = (
@@ -65,6 +69,51 @@ _CHARTER_INSTRUCTIONS = (
     ' "scope_preset": "summary" | "full" | null}\n'
     "אל תמציא דבר שלא נאמר בראיון."
 )
+
+
+def turn_to_text(turn: dict[str, Any]) -> str:
+    """A survey-style turn → readable plain text (transcript + UI fallback)."""
+    lines = []
+    intro = str(turn.get("intro", "")).strip()
+    if intro:
+        lines.append(intro)
+    for i, q in enumerate(turn.get("questions") or [], start=1):
+        lines.append(f"{i}. {str(q.get('text', '')).strip()}")
+        options = [str(o).strip() for o in (q.get("options") or []) if str(o).strip()]
+        if options:
+            lines.append("   אפשרויות: " + " | ".join(options))
+    if turn.get("done_hint"):
+        lines.append("(נראה שהתמונה מלאה — אפשר ללחוץ 'סיים ראיון והפק אמנה', "
+                     "או להמשיך להוסיף.)")
+    return "\n".join(lines).strip()
+
+
+def normalize_turn(raw: str) -> dict[str, Any]:
+    """Parse a model reply into the survey-turn shape. A free-form (non-JSON)
+    reply degrades gracefully to an intro with no prepared options, so a
+    serving session that answers in plain text still works."""
+    try:
+        data = extract_json(raw)
+        assert isinstance(data, dict)
+    except (ValueError, AssertionError):
+        return {"intro": raw.strip(), "questions": [], "done_hint": False}
+    questions = []
+    for q in (data.get("questions") or [])[:6]:
+        if not isinstance(q, dict) or not str(q.get("text", "")).strip():
+            continue
+        questions.append({
+            "text": str(q["text"]).strip(),
+            "options": [str(o).strip() for o in (q.get("options") or [])
+                        if str(o).strip()][:6],
+            "multi": bool(q.get("multi")),
+            "allow_other": q.get("allow_other", True) is not False,
+        })
+    turn = {"intro": str(data.get("intro", "")).strip(),
+            "questions": questions,
+            "done_hint": bool(data.get("done_hint"))}
+    if not turn["intro"] and not questions:
+        return {"intro": raw.strip(), "questions": [], "done_hint": False}
+    return turn
 
 
 def _transcript(messages: list[dict[str, Any]]) -> str:
@@ -90,24 +139,26 @@ def _brief_block(brief: ResearchBrief) -> str:
 
 
 def next_turn(ctx: RunContext, brief: ResearchBrief,
-              messages: list[dict[str, Any]]) -> str:
-    """One interviewer turn: opening questions on an empty transcript,
-    otherwise a follow-up turn over the whole conversation."""
+              messages: list[dict[str, Any]]) -> dict[str, Any]:
+    """One interviewer turn — a survey-style turn dict: opening questions on
+    an empty transcript, otherwise a follow-up over the whole conversation."""
     if not messages:
         prompt = (
             "זהו פתיחת הראיון. פרטי הטופס שהמשתמש מילא:\n"
             f"{_brief_block(brief)}\n\n"
-            "פתח את הראיון: משפט קצר שמסביר שזהו ראיון עומק שמטרתו סקר מדויק "
-            "יותר, ואז 3-4 שאלות הפתיחה החשובות ביותר לנושא הזה."
+            "פתח את הראיון: intro קצר שמסביר שזהו ראיון עומק שמטרתו סקר מדויק "
+            "יותר, ואז 3-4 שאלות הפתיחה החשובות ביותר לנושא הזה — כל אחת עם "
+            "אפשרויות מוכנות ללחיצה. החזר JSON בפורמט המחייב."
         )
     else:
         prompt = (
             f"פרטי הטופס:\n{_brief_block(brief)}\n\n"
             f"הראיון עד כה:\n{_transcript(messages)}\n\n"
-            "המשך את הראיון: התור הבא שלך כמראיין."
+            "המשך את הראיון: התור הבא שלך כמראיין, בפורמט ה-JSON המחייב — "
+            "שאלות עם אפשרויות מוכנות, מותאמות למה שכבר נענה."
         )
-    return ctx.llm.complete(prompt, purpose="interview",
-                            system=INTERVIEW_SYSTEM).strip()
+    raw = ctx.llm.complete(prompt, purpose="interview", system=INTERVIEW_SYSTEM)
+    return normalize_turn(raw)
 
 
 def build_charter(ctx: RunContext, brief: ResearchBrief,
