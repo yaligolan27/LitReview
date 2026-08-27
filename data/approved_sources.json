@@ -1,0 +1,19 @@
+{
+  "_comment": "Part-E wave 3 allowlist (spec §23). A Source Scout suggestion is auto-enabled ONLY if it matches a built-in connector or an entry here; anything else is shown to the operator for approval. Every entry is registered at T2 at most — never T1. Add only repositories your organization trusts. type: connector | oai_pmh | openalex_source.",
+  "sources": [
+    {
+      "name": "zenodo",
+      "type": "oai_pmh",
+      "endpoint": "https://zenodo.org/oai2d",
+      "tier": "T2",
+      "note": "Zenodo — CERN-operated open research repository"
+    },
+    {
+      "name": "hal",
+      "type": "oai_pmh",
+      "endpoint": "https://api.archives-ouvertes.fr/oai/hal",
+      "tier": "T2",
+      "note": "HAL — French national open archive"
+    }
+  ]
+}

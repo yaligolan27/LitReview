@@ -1,0 +1,14 @@
+{
+  "topic": "אימונותרפיה מותאמת-מחלה בסוכרת סוג 1",
+  "search_topic": "type 1 diabetes immunotherapy beta cell preservation",
+  "audience": "רופאים, חוקרים ומקבלי החלטות",
+  "year_from": 2015,
+  "year_to": 2026,
+  "goals": ["מיפוי הטיפולים בפיתוח", "הערכת יעילות קלינית"],
+  "subtopics": ["teplizumab", "baricitinib", "antigen-specific immunotherapy"],
+  "languages": ["English", "Hebrew"],
+  "user_papers": ["10.1056/NEJMoa1902226"],
+  "scope": "full",
+  "author": "מאיה",
+  "outputs": {"slides": true, "podcast": false}
+}

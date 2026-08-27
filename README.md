@@ -28,6 +28,10 @@ pytest                                   # כל הבדיקות רצות offline 
 
 # הרצת סקר דמו בלי רשת ובלי מודל:
 SURVEY_LLM_BACKEND=mock python run_pipeline.py --config examples/demo_small.json
+
+# אפליקציית ה-Web (דשבורד, שערי אישור, עריכת טיוטה, ייצוא):
+SURVEY_LLM_BACKEND=mock python -m litreview.server --port 8000
+# ואז לגלוש אל http://127.0.0.1:8000
 ```
 
 מצבי LLM (`SURVEY_LLM_BACKEND`): `native` (גשר קבצים מול סשן Claude Code — בלי מפתח,
@@ -35,3 +39,31 @@ SURVEY_LLM_BACKEND=mock python run_pipeline.py --config examples/demo_small.json
 `mock` (דטרמיניסטי, לבדיקות), `auto`.
 
 כל דגלי התצורה מרוכזים ב-`litreview/config.py` ומתועדים באפיון §14.
+
+## שימוש אישי על מנוי Claude (בלי מפתח API) — פקודה אחת
+
+```bash
+python start_local.py
+```
+
+**הלינק: http://localhost:8000** — המשגר מרים את השרת (native + דגלי איכות
+מקסימלית), פותח את הדפדפן, ומפעיל את "המנוע": סשן Claude Code על המנוי שלך
+שמשרת את גשר הקבצים לפי `SKILL.md` (ההרשאות שהוא צריך מאושרות מראש
+ב-`.claude/settings.json`). ‏Ctrl+C סוגר הכול; הסקרים נשמרים ב-`var/`.
+
+וריאציות: `--mock` (דמו בלי מנוע ובלי רשת) · `--no-engine` · `--no-browser`
+· `--port`. הפירוט המלא — "מסלול 0" ב-`docs/DEPLOY.md`.
+
+## פרסום כאתר (פרודקשן)
+
+```bash
+# עם קוד גישה — כל האפליקציה דורשת התחברות:
+SURVEY_ACCESS_CODE=long-secret SURVEY_LLM_BACKEND=api ANTHROPIC_API_KEY=... \
+  python -m litreview.server --host 0.0.0.0 --port 8000
+
+# או בקונטיינר (Dockerfile מצורף; volume על /app/var שומר את הסקרים):
+docker compose up -d
+```
+
+המדריך המלא — Render (חינם, "לחבר GitHub"), שרת פרטי עם דומיין ו-HTTPS
+אוטומטי, גיבויים והחלפת קוד — ב-**`docs/DEPLOY.md`**.

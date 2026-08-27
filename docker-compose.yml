@@ -1,0 +1,37 @@
+# LitReview — self-hosted deployment (VPS path, M7).
+#
+#   basic:        docker compose up -d              → http://<server>:8000
+#   with domain:  docker compose --profile domain up -d
+#                 (set DOMAIN in .env, point the domain's DNS A record at the
+#                  server — Caddy obtains and renews HTTPS automatically)
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - litreview-var:/app/var
+    ports:
+      - "8000:8000"
+
+  caddy:
+    image: caddy:2
+    profiles: ["domain"]
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      - DOMAIN=${DOMAIN:?set DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  litreview-var:
+  caddy-data:
+  caddy-config:

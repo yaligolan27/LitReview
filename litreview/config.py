@@ -12,7 +12,7 @@ deliberate and documented inline:
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass
 
 _TRUTHY = {"1", "true", "yes", "on"}
 _FALSY = {"0", "false", "no", "off", ""}
@@ -57,13 +57,18 @@ def _csv(name: str) -> tuple[str, ...]:
 
 
 def _refine_rounds() -> int:
-    # New counter flag wins; legacy boolean flag maps truthy→1 / falsy→0.
+    # New counter flag wins. The legacy flag is honored by what users MEANT:
+    # a numeric value is a round count (the original treated 2 as falsy and
+    # silently disabled the round — spec §16), otherwise truthy→1 / falsy→0.
     if os.environ.get("SURVEY_REFINE_ROUNDS") is not None:
         return _int("SURVEY_REFINE_ROUNDS", 1, lo=0, hi=5)
     legacy = os.environ.get("SURVEY_REFINE_ROUND")
     if legacy is None:
         return 1
-    return 1 if legacy.strip().lower() in _TRUTHY else 0
+    legacy = legacy.strip().lower()
+    if legacy.isdigit():
+        return max(0, min(5, int(legacy)))
+    return 1 if legacy in _TRUTHY else 0
 
 
 @dataclass(frozen=True)
@@ -126,6 +131,27 @@ class Settings:
     http_retries: int = 3
     http_timeout: float = 15.0
 
+    # --- Part-E wave 1 (spec §22) ---
+    formula_lint: bool = True        # mathtext parsing of [FORMULA] blocks
+    plain_boxes: bool = True         # chapters open with a "בפשטות" box
+    glossary: bool = True            # auto glossary + reader guide
+
+    # --- Part-E wave 2 (spec §21, §24) — all default OFF (opt-in) ---
+    reliability_signals: bool = False    # enrich cited papers with 9 trust signals
+    signals_cap: int = 40                # max cited papers to enrich (cost bound)
+    dr_depth: str = "standard"           # standard | deep (primary-source chase, per-SQ saturation)
+
+    # --- Part-E wave 3 (spec §23, §24) — default OFF / standard ---
+    source_scout: bool = False           # discover authoritative DBs on a real coverage gap
+    depth: str = "standard"              # standard | practical ([EXAMPLE] worked examples)
+
+    # --- Part-E wave 4 (spec §24) — full multilingual, default OFF ---
+    ml_db_routing: bool = False          # per-language database routing (OpenAlex language: + maps)
+    ml_web: bool = False                 # per-language deep-research rounds
+
+    # --- M7: web publishing (default OFF — empty code disables auth) ---
+    access_code: str = ""                # shared access code; non-empty → login required
+
     # --- optional subsystems ---
     semantic_retrieval: bool = False
     semantic_download: bool = False
@@ -182,6 +208,17 @@ class Settings:
             http_cache_ttl=_int("SURVEY_HTTP_CACHE_TTL", 604_800, lo=0),
             http_retries=_int("SURVEY_HTTP_RETRIES", 3, lo=0, hi=10),
             http_timeout=_float("SURVEY_HTTP_TIMEOUT", 15.0),
+            formula_lint=_bool("SURVEY_FORMULA_LINT", True),
+            plain_boxes=_bool("SURVEY_PLAIN_BOXES", True),
+            glossary=_bool("SURVEY_GLOSSARY", True),
+            reliability_signals=_bool("SURVEY_RELIABILITY_SIGNALS", False),
+            signals_cap=_int("SURVEY_SIGNALS_CAP", 40, lo=0),
+            dr_depth=_str("SURVEY_DR_DEPTH", "standard").lower(),
+            source_scout=_bool("SURVEY_SOURCE_SCOUT", False),
+            depth=_str("SURVEY_DEPTH", "standard").lower(),
+            ml_db_routing=_bool("SURVEY_ML_DB_ROUTING", False),
+            ml_web=_bool("SURVEY_ML_WEB", False),
+            access_code=_str("SURVEY_ACCESS_CODE", ""),
             semantic_retrieval=_bool("ENABLE_SEMANTIC_RETRIEVAL", False),
             semantic_download=_bool("ENABLE_SEMANTIC_DOWNLOAD", False),
             semantic_model=_str("SEMANTIC_MODEL", "all-MiniLM-L6-v2"),

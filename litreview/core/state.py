@@ -52,6 +52,10 @@ class ResearchBrief:
     scope_target_pages: int | None = None
     output_slides: bool = False
     output_podcast: bool = False
+    # M8: the research charter distilled from the deep interview — a rich
+    # markdown digest of what the user actually wants. Injected into the
+    # planner/writer/deep-research prompts; empty = no interview held.
+    charter: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -95,6 +99,10 @@ class Paper:
     source_type: str = ""           # journal-article / preprint / report / ...
     pdf_url: str = ""
     is_open_access: bool = False
+    # Part-E wave 2 (spec §21): reliability signals computed for CITED papers
+    # only, behind SURVEY_RELIABILITY_SIGNALS. Empty {} when the flag is off,
+    # so default serialization and rendering are unchanged.
+    reliability_signals: dict[str, Any] = field(default_factory=dict)
 
     def key_fields_missing(self) -> list[str]:
         missing = []
@@ -165,6 +173,7 @@ class Claim:
     rewrite: str = ""
     chapter: str = ""
     is_web: bool = False            # cites only [W#] — counted separately
+    cross_corroborated: bool = False   # Part-E: ≥2 disjoint author groups support it
     status_override: dict[str, Any] | None = None   # {value, by, at, reason}
 
     def effective_status(self) -> str:
@@ -271,6 +280,7 @@ class SurveyState:
     deep_research: dict[str, Any] = field(default_factory=dict)
     timeline_years: list[int] = field(default_factory=list)
     glossary: list[dict[str, Any]] = field(default_factory=list)
+    charts: list[dict[str, Any]] = field(default_factory=list)   # {title, svg, source_note}
 
     def log(self, stage: str, message: str, **data: Any) -> None:
         entry: dict[str, Any] = {"stage": stage, "message": message, "at": _utcnow()}
@@ -302,6 +312,7 @@ class SurveyState:
             "deep_research": self.deep_research,
             "timeline_years": self.timeline_years,
             "glossary": self.glossary,
+            "charts": self.charts,
         }
 
     @classmethod
@@ -326,6 +337,7 @@ class SurveyState:
             deep_research=data.get("deep_research", {}),
             timeline_years=data.get("timeline_years", []),
             glossary=data.get("glossary", []),
+            charts=data.get("charts", []),
         )
         state._unify_paper_identity()
         return state

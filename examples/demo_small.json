@@ -1,0 +1,12 @@
+{
+  "topic": "כלים מבוססי AI לסקירת ספרות אקדמית",
+  "search_topic": "AI tools for academic literature review",
+  "audience": "חוקרים ואנשי מקצוע",
+  "year_from": 2019,
+  "year_to": 2026,
+  "goals": ["מיפוי הכלים הקיימים", "זיהוי פערי אמינות"],
+  "subtopics": ["retrieval augmented generation", "citation verification"],
+  "languages": ["English", "Hebrew"],
+  "scope": "summary",
+  "author": "מאיה"
+}

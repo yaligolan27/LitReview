@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LitReview · כניסה</title>
+<style>
+  /* Self-contained on purpose: this page must render before any session
+     exists, so it pulls nothing that the auth middleware might guard. */
+  :root{
+    --navy-900:#0a1535; --navy-700:#1a3a8f; --blue-600:#1565c0;
+    --bg:#eef0f4; --ink:#1a1a2e; --muted:#5a627a; --line:#e0e4f0;
+    --surface:#ffffff;
+    --cover:linear-gradient(135deg,#0a1535 0%,#1a3a8f 55%,#0d4e8a 100%);
+    --shadow-lg:0 10px 40px rgba(10,21,53,.16); --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       font-family:'Segoe UI','Arial',sans-serif;background:var(--bg);color:var(--ink);
+       direction:rtl;line-height:1.7}
+  .card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-lg);
+        width:min(420px,92vw);overflow:hidden}
+  .head{background:var(--cover);color:#fff;padding:28px 28px 22px}
+  .head h1{margin:0;font-size:22px}
+  .head p{margin:6px 0 0;opacity:.85;font-size:13.5px}
+  form{padding:26px 28px 30px;display:flex;flex-direction:column;gap:14px}
+  label{font-size:13.5px;color:var(--muted);font-weight:600}
+  input{padding:11px 14px;border:1px solid var(--line);border-radius:10px;font-size:15px;
+        font-family:inherit;direction:ltr;text-align:center;letter-spacing:.08em}
+  input:focus{outline:2px solid var(--blue-600);border-color:transparent}
+  button{padding:11px;border:0;border-radius:10px;background:var(--navy-700);color:#fff;
+         font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+  button:hover{background:var(--blue-600)}
+  button:disabled{opacity:.6;cursor:wait}
+  .err{color:#c62828;font-size:13.5px;min-height:1.4em;margin:0}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="head">
+      <h1>📚 LitReview</h1>
+      <p>מערכת סקרי ספרות אקדמיים · נדרש קוד גישה</p>
+    </div>
+    <form id="f">
+      <label for="code">קוד גישה</label>
+      <input id="code" type="password" autocomplete="current-password" autofocus required>
+      <button id="btn" type="submit">כניסה</button>
+      <p class="err" id="err"></p>
+    </form>
+  </div>
+<script>
+  // Already authenticated (or auth disabled)? Straight to the app.
+  fetch('/api/auth/status').then(r => r.json()).then(s => {
+    if (s.authenticated) location.replace('/');
+  }).catch(() => {});
+
+  const form = document.getElementById('f');
+  const err = document.getElementById('err');
+  const btn = document.getElementById('btn');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    err.textContent = '';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({code: document.getElementById('code').value}),
+      });
+      if (res.status === 204) { location.replace('/'); return; }
+      const data = await res.json().catch(() => ({}));
+      err.textContent = data.detail || ('שגיאה ' + res.status);
+    } catch {
+      err.textContent = 'שגיאת רשת — השרת אינו זמין';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

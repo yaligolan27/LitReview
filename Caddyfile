@@ -1,0 +1,5 @@
+# Automatic HTTPS for the LitReview app (used by the "domain" compose profile).
+{$DOMAIN} {
+	reverse_proxy app:8000
+	encode gzip
+}

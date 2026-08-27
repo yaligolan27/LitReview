@@ -1,0 +1,14 @@
+# predatory_journals.csv — DISPLAY-ONLY watch list (Part-E wave 2, spec §21).
+#
+# This file is intentionally shipped EMPTY (header only). LitReview never
+# names a journal as predatory on its own, and a match here NEVER removes a
+# source — it only adds a visible "on a suspicion list" note for the reader.
+#
+# To use: an operator adds rows from a list they trust (e.g. an institutional
+# allow/deny list). Lines starting with '#' and blank lines are ignored.
+# Columns: name, issn, list_source
+#
+# Example (commented out — replace with entries your organization stands behind):
+# name,issn,list_source
+# Example Journal of Everything,0000-0000,internal review 2026
+name,issn,list_source
