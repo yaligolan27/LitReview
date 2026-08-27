@@ -40,17 +40,19 @@ SURVEY_LLM_BACKEND=mock python -m litreview.server --port 8000
 
 כל דגלי התצורה מרוכזים ב-`litreview/config.py` ומתועדים באפיון §14.
 
-## שימוש אישי על מנוי Claude (בלי מפתח API)
-
-מריצים את השרת במצב native — סשן Claude Code רגיל משמש כמנוע דרך גשר קבצים,
-והממשק מציג את פקודת השירות להעתקה:
+## שימוש אישי על מנוי Claude (בלי מפתח API) — פקודה אחת
 
 ```bash
-SURVEY_LLM_BACKEND=native SURVEY_BRIDGE_TIMEOUT=3600 python -m litreview.server --port 8000
+python start_local.py
 ```
 
-המתכון המלא (כולל דגלי איכות מקסימלית) — "מסלול 0" ב-`docs/DEPLOY.md`;
-כללי השירות לסשן — `SKILL.md`.
+**הלינק: http://localhost:8000** — המשגר מרים את השרת (native + דגלי איכות
+מקסימלית), פותח את הדפדפן, ומפעיל את "המנוע": סשן Claude Code על המנוי שלך
+שמשרת את גשר הקבצים לפי `SKILL.md` (ההרשאות שהוא צריך מאושרות מראש
+ב-`.claude/settings.json`). ‏Ctrl+C סוגר הכול; הסקרים נשמרים ב-`var/`.
+
+וריאציות: `--mock` (דמו בלי מנוע ובלי רשת) · `--no-engine` · `--no-browser`
+· `--port`. הפירוט המלא — "מסלול 0" ב-`docs/DEPLOY.md`.
 
 ## פרסום כאתר (פרודקשן)
 
